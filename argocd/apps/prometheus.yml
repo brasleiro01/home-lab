@@ -4,16 +4,17 @@ metadata:
   name: prometheus
   namespace: argocd
 spec:
-  destination:
-    namespace: observability
-    server: https://kubernetes.default.svc
+  project: default
   source:
-    path: argocd/prometheus
     repoURL: https://github.com/brasleiro01/home-lab/
     targetRevision: HEAD
-  sources: []
-  project: default
+    path: argocd/prometheus
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

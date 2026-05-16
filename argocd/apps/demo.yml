@@ -4,16 +4,17 @@ metadata:
   name: demo-app
   namespace: argocd
 spec:
-  destination:
-    namespace: demo
-    server: https://kubernetes.default.svc
+  project: default
   source:
-    path: argocd/demo-app
     repoURL: https://github.com/brasleiro01/home-lab/
     targetRevision: HEAD
-  sources: []
-  project: default
+    path: argocd/demo-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
