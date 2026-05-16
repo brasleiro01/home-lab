@@ -90,12 +90,6 @@ data:
     loki.source.file "pod_logs" {
       targets    = discovery.relabel.pod_logs.output
       forward_to = [loki.process.parse_cri.receiver]
-
-      // Persiste posição de leitura para sobreviver restarts
-      file_watch_config {
-        min_poll_frequency = "250ms"
-        max_poll_frequency = "250ms"
-      }
     }
 
     // --- Pipeline de processamento ---
@@ -136,12 +130,12 @@ data:
     // --- Envio para Loki ---
     loki.write "loki_endpoint" {
       endpoint {
-        url              = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
-        batch_wait       = "1s"
-        batch_size       = "1MiB"
-        min_backoff      = "500ms"
-        max_backoff      = "5m"
-        max_retries      = 10
+        url                = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+        batch_wait         = "1s"
+        batch_size         = 1048576
+        min_backoff_period = "500ms"
+        max_backoff_period = "5m"
+        max_backoff_retries = 10
       }
 
       external_labels = {
