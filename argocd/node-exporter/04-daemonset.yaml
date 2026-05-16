@@ -38,9 +38,10 @@ spec:
             - "--path.sysfs=/host/sys"
             - "--path.rootfs=/host/root"
             - "--path.procfs=/host/proc"
-            - "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)"
-            - "--collector.netclass.ignored-devices=^(veth.*)$"
-            - "--collector.netdev.device-exclude=^(veth.*)$"
+            # k3s uses containerd — exclude both docker and containerd paths
+            - "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/containerd/.+|var/lib/kubelet/pods/.+|run/k3s/.+)($|/)"
+            - "--collector.netclass.ignored-devices=^(veth|cni|flannel|cali|tunl|kube).*$"
+            - "--collector.netdev.device-exclude=^(veth|cni|flannel|cali|tunl|kube).*$"
             - "--no-collector.ipvs"
           ports:
             - containerPort: 9100

@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: observability
+data:
+  config.alloy: |
+    // ============================================================
+    // Grafana Alloy - home-lab observability
+    // Coleta logs de pods Kubernetes via filesystem (k3s/containerd)
+    // ============================================================
+
+    // --- Descoberta de pods via API do Kubernetes ---
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+
+    // --- Relabeling: define o path do log e os labels finais ---
+    discovery.relabel "pod_logs" {
+      targets = discovery.kubernetes.pods.targets
+
+      // Descarta pods que optaram por não ter logs coletados
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_loki_grafana_com_logs_scrape"]
+        action        = "drop"
+        regex         = "false"
+      }
+
+      // Descarta pods não em estado Running
+      rule {
+        source_labels = ["__meta_kubernetes_pod_phase"]
+        action        = "drop"
+        regex         = "Pending|Succeeded|Failed|Unknown"
+      }
+
+      // Label: namespace
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+
+      // Label: pod
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+
+      // Label: container
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+
+      // Label: node
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node"
+      }
+
+      // Label: app — tenta app.kubernetes.io/name primeiro, depois label "app"
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "app"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        regex         = "(.+)"
+        target_label  = "app"
+      }
+
+      // Label: job = namespace/app
+      rule {
+        source_labels = ["namespace", "app"]
+        separator     = "/"
+        target_label  = "job"
+      }
+
+      // Path do arquivo de log: /var/log/pods/<ns>_<pod>_<uid>/<container>/*.log
+      // $1 = pod_uid, $2 = container_name
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        regex         = "(.+)/(.+)"
+        replacement   = "/var/log/pods/*$1/$2/*.log"
+        target_label  = "__path__"
+      }
+    }
+
+    // --- Leitura dos arquivos de log ---
+    loki.source.file "pod_logs" {
+      targets    = discovery.relabel.pod_logs.output
+      forward_to = [loki.process.parse_cri.receiver]
+
+      // Persiste posição de leitura para sobreviver restarts
+      file_watch_config {
+        min_poll_frequency = "250ms"
+        max_poll_frequency = "250ms"
+      }
+    }
+
+    // --- Pipeline de processamento ---
+    loki.process "parse_cri" {
+      // Parseia o formato CRI (containerd): timestamp flags stream message
+      stage.cri {}
+
+      // Descarta linhas de health/readiness check para reduzir ruído
+      stage.drop {
+        expression          = ".*(GET /health|GET /ready|GET /live|kube-probe).*"
+        drop_counter_reason = "healthcheck"
+      }
+
+      // Tenta extrair level de logs JSON
+      stage.json {
+        expressions = {
+          level   = "level",
+          msg     = "msg",
+          message = "message",
+        }
+      }
+
+      // Extrai level de logs em texto plano (INFO, WARN, ERROR, DEBUG)
+      stage.regex {
+        expression = "(level|lvl|severity)=(?P<level>\\w+)"
+      }
+
+      // Adiciona label de severidade se encontrado
+      stage.labels {
+        values = {
+          level = "",
+        }
+      }
+
+      forward_to = [loki.write.loki_endpoint.receiver]
+    }
+
+    // --- Envio para Loki ---
+    loki.write "loki_endpoint" {
+      endpoint {
+        url              = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+        batch_wait       = "1s"
+        batch_size       = "1MiB"
+        min_backoff      = "500ms"
+        max_backoff      = "5m"
+        max_retries      = 10
+      }
+
+      external_labels = {
+        cluster = "home-lab",
+      }
+    }

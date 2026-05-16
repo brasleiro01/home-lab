@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  namespace: observability
+  labels:
+    app: alloy
+spec:
+  selector:
+    matchLabels:
+      app: alloy
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: alloy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "12345"
+    spec:
+      serviceAccountName: alloy
+      # Garante acesso aos logs em todos os nós, incluindo control-plane
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.3.1
+          args:
+            - run
+            - /etc/alloy/config.alloy
+            - --storage.path=/var/lib/alloy
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --stability.level=generally-available
+          env:
+            - name: ALLOY_DEPLOY_MODE
+              value: "DaemonSet"
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 12345
+              name: http-metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 12345
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          securityContext:
+            # Root necessário para leitura dos logs de pods (owned by root no host)
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_READ_SEARCH
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+              readOnly: true
+            - name: pod-logs
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: alloy-wal
+              mountPath: /var/lib/alloy
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+        # Logs de pods do containerd (k3s)
+        - name: pod-logs
+          hostPath:
+            path: /var/log/pods
+            type: Directory
+        # WAL persistido no host para sobreviver restarts sem perder posição
+        - name: alloy-wal
+          hostPath:
+            path: /var/lib/alloy
+            type: DirectoryOrCreate
