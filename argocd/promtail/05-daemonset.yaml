@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: observability
+  labels:
+    app: promtail
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: promtail
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9080"
+    spec:
+      serviceAccountName: promtail
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: promtail
+          image: grafana/promtail:3.1.0
+          args:
+            - "-config.file=/etc/promtail/promtail.yaml"
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 9080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 9080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /etc/promtail/promtail.yaml
+              subPath: promtail.yaml
+            - name: run
+              mountPath: /run/promtail
+            - name: pods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: docker
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: promtail-config
+        - name: run
+          hostPath:
+            path: /run/promtail
+        - name: pods
+          hostPath:
+            path: /var/log/pods
+        - name: docker
+          hostPath:
+            path: /var/lib/docker/containers

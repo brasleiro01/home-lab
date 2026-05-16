@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: argocd
+spec:
+  destination:
+    namespace: observability
+    server: https://kubernetes.default.svc
+  source:
+    path: argocd/prometheus
+    repoURL: https://github.com/brasleiro01/home-lab/
+    targetRevision: HEAD
+  sources: []
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

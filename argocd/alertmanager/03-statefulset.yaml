@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alertmanager
+  namespace: observability
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  serviceName: alertmanager-headless
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9093"
+    spec:
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--web.route-prefix=/"
+            - "--cluster.listen-address="
+          ports:
+            - containerPort: 9093
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager/alertmanager.yml
+              subPath: alertmanager.yml
+            - name: alertmanager-data
+              mountPath: /alertmanager
+      volumes:
+        - name: config
+          secret:
+            secretName: alertmanager-config
+        - name: alertmanager-data
+          persistentVolumeClaim:
+            claimName: alertmanager-data

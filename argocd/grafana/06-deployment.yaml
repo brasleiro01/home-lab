@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: observability
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+    spec:
+      securityContext:
+        fsGroup: 472
+        runAsNonRoot: true
+        runAsUser: 472
+      initContainers:
+        - name: init-chmod
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 472:472 /var/lib/grafana"]
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.0.0
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-credentials
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-credentials
+                  key: admin-password
+            - name: GF_PATHS_DATA
+              value: /var/lib/grafana
+            - name: GF_PATHS_LOGS
+              value: /var/log/grafana
+            - name: GF_PATHS_PLUGINS
+              value: /var/lib/grafana/plugins
+            - name: GF_PATHS_PROVISIONING
+              value: /etc/grafana/provisioning
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            - name: grafana-ini
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-providers
+              mountPath: /etc/grafana/provisioning/dashboards
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data
+        - name: grafana-ini
+          configMap:
+            name: grafana-ini
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-providers
+          configMap:
+            name: grafana-dashboard-providers
