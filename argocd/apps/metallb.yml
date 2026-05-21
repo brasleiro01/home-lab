@@ -11,6 +11,12 @@ spec:
     repoURL: https://metallb.github.io/metallb
     chart: metallb
     targetRevision: "0.16.0"
+    helm:
+      values: |
+        frr-k8s:
+          prometheus:
+            serviceMonitor:
+              enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
