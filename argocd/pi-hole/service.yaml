@@ -5,8 +5,11 @@ metadata:
   namespace: pihole
   labels:
     app: pihole
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.15.201"
+    metallb.universe.tf/address-pool: "pihole-pool"
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: pihole
   ports:
@@ -14,14 +17,11 @@ spec:
       port: 53
       targetPort: 53
       protocol: TCP
-      nodePort: 30053
     - name: dns-udp
       port: 53
       targetPort: 53
       protocol: UDP
-      nodePort: 30053
     - name: http
       port: 80
       targetPort: 80
       protocol: TCP
-      nodePort: 30080
