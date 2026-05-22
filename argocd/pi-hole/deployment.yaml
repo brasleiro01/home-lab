@@ -25,6 +25,38 @@ spec:
               value: "America/Sao_Paulo"
             - name: WEBPASSWORD
               value: "admin123"
+          ports:
+            - containerPort: 80
+              protocol: TCP
+              name: http-admin
+            - containerPort: 53
+              protocol: TCP
+              name: dns-tcp
+            - containerPort: 53
+              protocol: UDP
+              name: dns-udp
+          livenessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /admin/
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
           volumeMounts:
             - name: etc-pihole-volume
               mountPath: "/etc/pihole"
