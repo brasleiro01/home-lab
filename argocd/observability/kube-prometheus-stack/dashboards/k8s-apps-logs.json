@@ -252,8 +252,9 @@
       }
     },
     {
+      "id": 4,
       "type": "table",
-      "title": "CPU por pod (cores) — mín / em uso / máx",
+      "title": "CPU por pod — request / em uso / limite",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -266,50 +267,90 @@
       },
       "targets": [
         {
-          "refId": "A",
+          "refId": "REQ",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"}[5m]))",
-          "legendFormat": "{{pod}}",
-          "instant": false
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (kube_pod_container_resource_requests{namespace=~\"$namespace\", pod=~\"$pod\", resource=\"cpu\"})"
+        },
+        {
+          "refId": "USE",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"}[5m]))"
+        },
+        {
+          "refId": "LIM",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (kube_pod_container_resource_limits{namespace=~\"$namespace\", pod=~\"$pod\", resource=\"cpu\"})"
         }
       ],
       "transformations": [
         {
-          "id": "reduce",
-          "options": {
-            "reducers": [
-              "min",
-              "last",
-              "max"
-            ],
-            "mode": "seriesToRows"
-          }
+          "id": "merge",
+          "options": {}
         },
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "pod": 0,
+              "Value #REQ": 1,
+              "Value #USE": 2,
+              "Value #LIM": 3
+            },
             "renameByName": {
-              "Field": "Pod",
-              "Min": "Mínimo",
-              "min": "Mínimo",
-              "Last": "Em uso",
-              "last": "Em uso",
-              "Last *": "Em uso",
-              "Max": "Máximo",
-              "max": "Máximo"
+              "pod": "Pod",
+              "Value #REQ": "Request",
+              "Value #USE": "Em uso",
+              "Value #LIM": "Limite"
             }
           }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "custom": {
+            "align": "right",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pod"
+            },
+            "properties": [
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
@@ -323,8 +364,9 @@
       }
     },
     {
+      "id": 5,
       "type": "table",
-      "title": "Memória por pod (working set) — mín / em uso / máx",
+      "title": "Memória por pod — request / em uso / limite",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -337,50 +379,90 @@
       },
       "targets": [
         {
-          "refId": "A",
+          "refId": "REQ",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"})",
-          "legendFormat": "{{pod}}",
-          "instant": false
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (kube_pod_container_resource_requests{namespace=~\"$namespace\", pod=~\"$pod\", resource=\"memory\"})"
+        },
+        {
+          "refId": "USE",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"})"
+        },
+        {
+          "refId": "LIM",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true,
+          "format": "table",
+          "expr": "sum by (pod) (kube_pod_container_resource_limits{namespace=~\"$namespace\", pod=~\"$pod\", resource=\"memory\"})"
         }
       ],
       "transformations": [
         {
-          "id": "reduce",
-          "options": {
-            "reducers": [
-              "min",
-              "last",
-              "max"
-            ],
-            "mode": "seriesToRows"
-          }
+          "id": "merge",
+          "options": {}
         },
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "pod": 0,
+              "Value #REQ": 1,
+              "Value #USE": 2,
+              "Value #LIM": 3
+            },
             "renameByName": {
-              "Field": "Pod",
-              "Min": "Mínimo",
-              "min": "Mínimo",
-              "Last": "Em uso",
-              "last": "Em uso",
-              "Last *": "Em uso",
-              "Max": "Máximo",
-              "max": "Máximo"
+              "pod": "Pod",
+              "Value #REQ": "Request",
+              "Value #USE": "Em uso",
+              "Value #LIM": "Limite"
             }
           }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes"
+          "unit": "bytes",
+          "custom": {
+            "align": "right",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pod"
+            },
+            "properties": [
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
