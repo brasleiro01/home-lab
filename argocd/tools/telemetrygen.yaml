@@ -1,0 +1,35 @@
+# Gerador de traces SINTÉTICOS (telemetrygen) — só para VALIDAR o pipeline de APM.
+# Envia OTLP pro Alloy (gRPC 4317) → Tempo → metrics-generator → Prometheus.
+# Serve pra ver as span metrics (RED) e a tabela de traces enchendo, sem depender de
+# instrumentar app. NÃO deixe rodando pra sempre — apague quando terminar o teste:
+#   kubectl delete -f argocd/tools/telemetrygen.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetrygen
+  namespace: observability
+  labels:
+    app: telemetrygen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetrygen
+  template:
+    metadata:
+      labels:
+        app: telemetrygen
+    spec:
+      containers:
+        - name: telemetrygen
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest
+          args:
+            - traces
+            - --otlp-endpoint=alloy.observability.svc.cluster.local:4317
+            - --otlp-insecure
+            - --rate=5                 # ~5 traces/s (gentil no homelab)
+            - --duration=168h          # 7 dias; se cair, o Deployment reinicia
+            - --service=demo-checkout  # aparece como service_name nas span metrics
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits:   { cpu: 100m, memory: 64Mi }

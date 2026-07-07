@@ -1,0 +1,19 @@
+# Instrumentation do demo-app (nginx). O operator injeta o módulo OTel do nginx e
+# reescreve o nginx.conf p/ carregá-lo. O módulo exporta via OTLP gRPC → Alloy (4317).
+# Requer a CRD do OpenTelemetry Operator (stack observability).
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: demo-app-otel
+  namespace: demo
+spec:
+  # módulo nginx (opentelemetry-cpp) usa OTLP gRPC → porta 4317 do Alloy
+  exporter:
+    endpoint: http://alloy.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: always_on
+  nginx:
+    configFile: /etc/nginx/nginx.conf

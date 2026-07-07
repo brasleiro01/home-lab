@@ -12,10 +12,15 @@ spec:
     metadata:
       labels:
         app: demo-app
+      annotations:
+        # auto-instrumentação nginx pelo OpenTelemetry Operator (Instrumentation "demo-app-otel").
+        # OBS: o módulo OTel do operator é compilado p/ nginx Debian (glibc) — por isso a imagem
+        # deixou de ser alpine (musl). Se o pod crashar em "load_module", ver troubleshooting.
+        instrumentation.opentelemetry.io/inject-nginx: "demo-app-otel"
     spec:
       containers:
         - name: demo-app
-          image: nginx:alpine
+          image: nginx:1.27
           ports:
             - containerPort: 80
           volumeMounts:
