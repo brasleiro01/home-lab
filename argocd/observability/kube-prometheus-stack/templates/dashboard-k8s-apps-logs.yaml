@@ -11,6 +11,8 @@ metadata:
   namespace: observability
   labels:
     grafana_dashboard: "1"
+  annotations:
+    grafana_folder: SRE
 data:
   k8s-apps-logs.json: |
 {{ .Files.Get "dashboards/k8s-apps-logs.json" | indent 4 }}
