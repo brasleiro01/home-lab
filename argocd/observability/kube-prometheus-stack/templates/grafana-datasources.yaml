@@ -51,10 +51,12 @@ data:
             filterByTraceID: true
             spanStartTimeShift: '-1h'
             spanEndTimeShift: '1h'
+            # key = atributo do span (convenção semântica do OTel Operator);
+            # value = label no Loki (setado pelo Alloy). Casa trace -> logs por ns/pod.
             tags:
-              - key: namespace
+              - key: k8s.namespace.name
                 value: namespace
-              - key: pod
+              - key: k8s.pod.name
                 value: pod
           # RED/latência por serviço a partir das span metrics
           tracesToMetrics:

@@ -1,0 +1,23 @@
+# Instrumentation: define COMO o operator auto-instrumenta a app.
+# O pod do k8s-monitor referencia isto via annotation
+# (instrumentation.opentelemetry.io/inject-python: "k8s-monitor-otel").
+# Requer a CRD do OpenTelemetry Operator (app "opentelemetry-operator", sync-wave 1).
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: k8s-monitor-otel
+  namespace: k8s-monitor
+spec:
+  # traces vão pro Alloy (gateway OTLP) → Tempo. gRPC 4317, FQDN cross-namespace.
+  exporter:
+    endpoint: http://alloy.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: always_on          # homelab: 100% dos traces
+  python:
+    env:
+      # SDK Python default é gRPC; deixar explícito evita cair em http/protobuf
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: grpc
