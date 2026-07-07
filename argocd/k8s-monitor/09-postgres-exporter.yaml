@@ -1,0 +1,83 @@
+# postgres_exporter — expõe métricas do Postgres (conexões, tps, locks, cache hit, tamanho)
+# pro Prometheus. Banco não gera trace; a saúde dele vem por MÉTRICAS (aqui) e os spans de
+# query vêm do CLIENTE (k8s-monitor Python via psycopg).
+# Credenciais reaproveitadas do Secret existente (k8s-monitor-secrets) — SEM hardcode.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  namespace: k8s-monitor
+  labels:
+    app: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  template:
+    metadata:
+      labels:
+        app: postgres-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+          ports:
+            - name: metrics
+              containerPort: 9187
+          env:
+            # URI sem credenciais; user/senha entram por DATA_SOURCE_USER/PASS (do Secret)
+            - name: DATA_SOURCE_URI
+              value: "postgres-k8s-monitor:5432/k8smonitor?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: k8s-monitor-secrets
+                  key: POSTGRES_USER
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: k8s-monitor-secrets
+                  key: POSTGRES_PASSWORD
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits:   { cpu: 100m, memory: 64Mi }
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  namespace: k8s-monitor
+  labels:
+    app: postgres-exporter
+spec:
+  selector:
+    app: postgres-exporter
+  ports:
+    - name: metrics
+      port: 9187
+      targetPort: metrics
+---
+# ServiceMonitor: o Prometheus (kube-prometheus-stack) coleta via
+# serviceMonitorSelectorNilUsesHelmValues=false (seleciona todos os SMs de todos os ns).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: postgres-exporter
+  namespace: k8s-monitor
+  labels:
+    app: postgres-exporter
+spec:
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
