@@ -1,0 +1,30 @@
+rancher:
+  # FQDN de acesso (Cloudflare → Traefik)
+  hostname: rancher.mvps.com.br
+
+  # Homelab: senha de bootstrap versionada (repo). Com valor não-vazio, o CHART cria e mantém
+  # o Secret `bootstrap-secret` a partir daqui e injeta no pod — sem extraEnv/ESO.
+  # TROQUE por uma senha sua. É a senha do 1º login (admin); após definir a definitiva no
+  # Rancher, este valor deixa de conceder acesso.
+  bootstrapPassword: "admin"
+
+  # single-node k3s: 1 réplica (sem peering/anti-affinity)
+  replicas: 1
+  addLocal: "true"
+
+  # Cloudflare/Traefik terminam o TLS; o Traefik seta X-Forwarded-Proto=https → Rancher gera
+  # links em https (sem mixed-content — NÃO precisa de HAProxy no homelab).
+  tls: external
+  agentTLSMode: system-store          # cert público (Cloudflare) — evita strict CA no agente
+
+  # Ingress do próprio chart, na classe do k3s (Traefik). Sem annotations default (são de nginx).
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    includeDefaultExtraAnnotations: false
+
+  # homelab: sem auditoria/logos custom
+  auditLog:
+    enabled: false
+  customLogos:
+    enabled: false

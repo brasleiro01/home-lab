@@ -10,27 +10,33 @@
   <img src="https://upload.wikimedia.org/wikipedia/commons/9/94/Cloudflare_Logo.svg" height="36" alt="Cloudflare"/>
 </p>
 
-# Rancher no homelab (k3s) — 100% GitOps com Argo CD + Traefik + Cloudflare
+# Rancher no homelab (k3s) — umbrella chart vendorizado (igual ao homolog)
 
-Rancher Server **2.14.3** instalado **inteiramente por GitOps** (Argo CD), exposto pelo **Traefik**
-(ingress do k3s) em `rancher.mvps.com.br` (Cloudflare). **Nenhum passo manual de `kubectl`** — o
-Argo CD aplica o chart **e** o Secret de bootstrap (Application **multi-source**).
+Rancher Server **2.14.3** via **Argo CD**, no mesmo modelo do ambiente corporativo: **umbrella Helm
+chart com o chart vendorizado no repo** (`charts/rancher-2.14.3.tgz`) + `values.yaml`, e o
+Application apontando pro **path local**. O Argo CD renderiza o chart **sem contatar o repo Helm
+remoto** — foi o que resolveu o erro `repository not accessible / NoSuchKey`.
 
-> Adaptação da versão corporativa (EKS/nginx). **O que mudou pro homelab:**
-> | Corporativo (EKS) | Homelab (k3s) |
-> |---|---|
-> | nginx-internal + **HAProxy** (NLB L4 não mandava `X-Forwarded-Proto`) | **Traefik** já seta `X-Forwarded-Proto` → **sem HAProxy** |
-> | Senha via **ESO/AWS Secrets Manager** | **Secret versionado** no repo (`bootstrap-secret.yaml`), aplicado pelo Argo CD |
-> | `replicas: 3` + antiAffinity + Karpenter | **`replicas: 1`** (single-node), sem scheduling especial |
-> | Chart vendorizado no repo | **Helm remoto** (canal stable), como o metallb |
+## Estrutura (igual `apps/mt-rancher` do homolog)
+```
+argocd/rancher/
+  ├─ Chart.yaml                 # umbrella (dependency: rancher 2.14.3)
+  ├─ Chart.lock                 # trava da dependência
+  ├─ charts/rancher-2.14.3.tgz  # chart VENDORIZADO (não baixa do remoto)
+  ├─ values.yaml                # config sob a chave "rancher:"
+  └─ README.md
+argocd/apps/rancher.yml         # Application → path argocd/rancher (helm valueFiles: values.yaml)
+```
 
-## Como funciona (multi-source)
-O `argocd/apps/rancher.yml` tem **duas sources** num único Application:
-1. **Helm** → chart `rancher` 2.14.3 (de `releases.rancher.com/server-charts/stable`) com os values inline.
-2. **Git** → `path: argocd/rancher` deste repo → aplica o `bootstrap-secret.yaml` (o `.example` e este README são ignorados pelo Argo CD).
+## Diferenças do homolog (adaptação homelab)
+| Homolog (EKS) | Homelab (k3s) |
+|---|---|
+| nginx-internal + **HAProxy** | **Traefik** já seta `X-Forwarded-Proto` → **sem HAProxy** |
+| **ESO/Secrets Manager** | `bootstrapPassword` **no `values.yaml`** (o chart cria o `bootstrap-secret`) |
+| `replicas: 3` + antiAffinity + Karpenter | **`replicas: 1`**, sem scheduling especial |
+| `ingress.enabled: false` (ingress próprio→HAProxy) | **`ingress.enabled: true`** + `ingressClassName: traefik` |
 
-O Secret tem `sync-wave: "-1"` → é aplicado **antes** do Deployment, então o Rancher já sobe com a senha.
-
+## Fluxo
 ```
 Browser ─HTTPS─▶ Cloudflare (proxy) ─▶ Roteador (NAT 80/443) ─▶ Traefik (MetalLB 192.168.15.202)
                                                                      │  ingress rancher.mvps.com.br
@@ -38,44 +44,43 @@ Browser ─HTTPS─▶ Cloudflare (proxy) ─▶ Roteador (NAT 80/443) ─▶ Tr
                                                 Rancher (cattle-system, tls=external, :80, 1 réplica)
 ```
 
-## Pré-requisitos (já no homelab)
+## Pré-requisitos
 - k3s + **Traefik** + **MetalLB** (`192.168.15.202`) + **Argo CD**.
-- **Cloudflare**: `rancher.mvps.com.br` **CNAME → mvps.com.br**, **Proxied**; SSL/TLS mode **Full** (se der erro, teste `Flexible`).
-- Port-forward do roteador 80/443 → `192.168.15.202` (ver doc `homelab-k3s`).
+- Cloudflare: `rancher.mvps.com.br` **CNAME → mvps.com.br**, **Proxied**; SSL/TLS **Full** (se der erro, `Flexible`).
+- Port-forward do roteador 80/443 → `192.168.15.202` (doc `homelab-k3s`).
 
-## Deploy (GitOps — só git)
-1. **Defina a senha** em `argocd/rancher/bootstrap-secret.yaml` (troque `TROQUE_ESTA_SENHA`).
+## Deploy (GitOps)
+1. Edite a senha em `argocd/rancher/values.yaml` (`bootstrapPassword`).
 2. **Commit + push.**
-3. O Argo CD sincroniza o app `rancher` (ou aplique o Application uma vez: `kubectl apply -f argocd/apps/rancher.yml`). Ele instala o chart + o secret.
+3. `kubectl apply -f argocd/apps/rancher.yml` (ou o Argo CD já sincroniza).
 ```bash
 kubectl -n cattle-system rollout status deploy/rancher     # 1/1 Running
 ```
-4. Acesse `https://rancher.mvps.com.br` → login `admin` + a senha do secret → **defina a senha definitiva**.
+4. Acesse `https://rancher.mvps.com.br` → `admin` + senha do `bootstrapPassword` → defina a definitiva.
 
-## Verificação
+## Validar local (antes do push)
 ```bash
-kubectl -n cattle-system get pods
-kubectl get ingress -n cattle-system                 # host rancher.mvps.com.br (classe traefik)
-kubectl get clusters.management.cattle.io            # 'local' deve ficar Ready
+helm template rancher argocd/rancher -f argocd/rancher/values.yaml --kube-version 1.31.0 | head
+```
+
+## Atualizar a versão do Rancher
+```bash
+# ajuste version/appVersion no Chart.yaml e a versão da dependência, então:
+helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+helm repo update
+helm dependency build argocd/rancher      # re-vendoriza o novo .tgz + Chart.lock
+git add argocd/rancher && git commit -m "chore(rancher): bump 2.14.x" && git push
 ```
 
 ## Troubleshooting
-- **Login "0 users" / admin não nasce**: o pod precisa do `CATTLE_BOOTSTRAP_PASSWORD` no 1º boot. O
-  `sync-wave: -1` do secret garante isso; se subiu antes, `kubectl -n cattle-system rollout restart deploy/rancher`.
-- **Mixed-content**: não deve ocorrer (Traefik + Cloudflare setam o proto). Se ocorrer, cheque o **SSL mode** no Cloudflare.
+- **`repository not accessible / NoSuchKey`**: era o Argo CD tratando o repo Helm remoto como git.
+  Resolvido **vendorizando o chart** (esta abordagem) — não há mais repo remoto na source.
+- **Login "0 users" / admin não nasce**: `bootstrapPassword` precisa estar setado (o chart cria o
+  `bootstrap-secret`); se subiu vazio, ajuste e `kubectl -n cattle-system rollout restart deploy/rancher`.
 - **Cluster `local` Unavailable com `Connected=True`** (após restart): condition `Ready` travada →
   `kubectl annotate clusters.management.cattle.io local cattle.io/force-reconcile=$(date +%s) --overwrite`.
-- **Error 522**: é rede (NAT/port-forward ou Cloudflare), não o Rancher — ver doc `homelab-k3s`.
+- **Error 522**: rede (NAT/port-forward ou Cloudflare), não o Rancher — ver doc `homelab-k3s`.
 
-## ⚠️ Segurança (repo público)
-- O **`bootstrapPassword` é descartável**: só vale no 1º login; depois que você define a senha real
-  do admin no Rancher, ele não concede mais acesso. Por isso versioná-lo é baixo risco.
-- **Mas os demais secrets do repo** (ex.: `k8s-monitor/04-secrets.yaml` tem chave do Gemini, webhook do
-  Discord, senha do Postgres) **ficam expostos se o repo for PÚBLICO.** Recomendo **repo privado** ou
-  migrar pra **Sealed Secrets/SOPS** (aí o secret vai criptografado no git e o Argo CD aplica igual).
-- Rancher exposto na internet: considere **Cloudflare Access (Zero Trust)** na frente.
-
-## Arquivos
-- `../apps/rancher.yml` — Argo CD Application **multi-source** (Helm 2.14.3 + este path).
-- `bootstrap-secret.yaml` — Secret da senha de bootstrap (versionado).
-- `bootstrap-secret.yaml.example` — modelo.
+## ⚠️ Segurança
+`bootstrapPassword` no git é **descartável** (só o 1º login). Mas se o repo for **público**, prefira
+**repo privado** ou **Sealed Secrets/SOPS**. Rancher exposto: considere **Cloudflare Access**.
