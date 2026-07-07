@@ -1,0 +1,17 @@
+# Suíte de dashboards estilo New Relic (APM Summary/Transações + Postgres).
+# Um ConfigMap, cada chave .json vira um dashboard (o sidecar do Grafana lê cada uma).
+# JSON via .Files.Get (RAW) p/ o Helm nao interpretar os tokens do Grafana.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-apm-suite
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  apm-summary.json: |
+{{ .Files.Get "dashboards/apm-summary.json" | indent 4 }}
+  apm-transactions.json: |
+{{ .Files.Get "dashboards/apm-transactions.json" | indent 4 }}
+  postgres.json: |
+{{ .Files.Get "dashboards/postgres.json" | indent 4 }}
