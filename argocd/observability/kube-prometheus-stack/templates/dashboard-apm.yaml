@@ -1,0 +1,12 @@
+# Dashboard APM (Tempo): service graph + RED (span metrics) + traces.
+# JSON via .Files.Get (RAW) para o Helm nao interpretar os tokens do Grafana.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-apm
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  apm.json: |
+{{ .Files.Get "dashboards/apm.json" | indent 4 }}

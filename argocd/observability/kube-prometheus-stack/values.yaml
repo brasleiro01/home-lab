@@ -18,6 +18,7 @@ kube-prometheus-stack:
         env: homelab
       retention: 7d
       retentionSize: "8GB"
+      enableRemoteWriteReceiver: true    # recebe métricas (span/service-graph) do metrics-generator do Tempo
       serviceMonitorSelectorNilUsesHelmValues: false
       podMonitorSelectorNilUsesHelmValues: false
       ruleSelectorNilUsesHelmValues: false

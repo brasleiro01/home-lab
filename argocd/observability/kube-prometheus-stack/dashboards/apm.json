@@ -1,0 +1,110 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "schemaVersion": 39,
+  "tags": ["homelab", "apm", "tempo", "traces"],
+  "title": "APM — Traces & Serviços",
+  "uid": "apm-traces",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Serviço",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(traces_spanmetrics_calls_total, service_name)",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".+",
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "nodeGraph",
+      "title": "Service Graph (dependências entre serviços)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "tempo", "uid": "tempo" }, "queryType": "serviceMap" }
+      ],
+      "options": {}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request rate (req/s) por serviço",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (service_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\"}[5m]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Error rate (erros/s) por serviço",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 9 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (service_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "red" }, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Latência p95 (ms) por serviço",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le, service_name) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}[5m])))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Traces recentes (clique em um TraceID para abrir o trace e ver os logs correlacionados)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 11, "w": 24, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "queryType": "traceql",
+          "query": "{}",
+          "limit": 50,
+          "tableType": "traces"
+        }
+      ],
+      "options": {}
+    }
+  ]
+}

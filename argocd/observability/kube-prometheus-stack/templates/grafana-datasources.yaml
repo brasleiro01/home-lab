@@ -25,9 +25,37 @@ data:
         type: loki
         access: proxy
         url: http://loki-gateway.observability.svc
+        jsonData:
+          # extrai o trace id da linha de log e cria o link "→ Tempo" (logs -> trace)
+          derivedFields:
+            - name: TraceID
+              matcherType: regex
+              matcherRegex: '(?:trace[_-]?id|traceID)["=:\s]+(\w+)'
+              url: '$${__value.raw}'
+              datasourceUid: tempo
 
       - name: Tempo
         uid: tempo
         type: tempo
         access: proxy
         url: http://tempo.observability.svc:3100
+        jsonData:
+          # Service Graph (nodeGraph) a partir das métricas do metrics-generator
+          serviceMap:
+            datasourceUid: prometheus
+          nodeGraph:
+            enabled: true
+          # de um span, pular pros logs no Loki (trace -> logs) casando namespace/pod + trace id
+          tracesToLogsV2:
+            datasourceUid: loki
+            filterByTraceID: true
+            spanStartTimeShift: '-1h'
+            spanEndTimeShift: '1h'
+            tags:
+              - key: namespace
+                value: namespace
+              - key: pod
+                value: pod
+          # RED/latência por serviço a partir das span metrics
+          tracesToMetrics:
+            datasourceUid: prometheus

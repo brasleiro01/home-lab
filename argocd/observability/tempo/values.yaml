@@ -23,6 +23,23 @@ tempo:
           http:
             endpoint: "0.0.0.0:4318"
 
+    # APM: metrics-generator gera service graph + span metrics (RED) e faz remote_write
+    # pro Prometheus. Precisa do enableRemoteWriteReceiver no kube-prometheus-stack.
+    metricsGenerator:
+      enabled: true
+      remoteWriteUrl: "http://kube-prometheus-stack-prometheus.observability.svc:9090/api/v1/write"
+      processor:
+        service_graphs: {}
+        span_metrics:
+          enable_target_info: true
+    # ativa os processadores por tenant (senão o generator não roda)
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - service-graphs
+            - span-metrics
+
   serviceAccount:
     create: true
 
