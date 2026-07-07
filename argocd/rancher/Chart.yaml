@@ -1,0 +1,10 @@
+apiVersion: v2
+name: rancher-homelab
+description: Umbrella chart do Rancher Server 2.14.3 para o homelab (k3s + Traefik + Cloudflare).
+type: application
+version: 0.1.0
+appVersion: "2.14.3"
+dependencies:
+  - name: rancher
+    version: "2.14.3"
+    repository: "https://releases.rancher.com/server-charts/stable"
