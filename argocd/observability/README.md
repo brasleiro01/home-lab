@@ -30,14 +30,33 @@ Adaptação do projeto corporativo (`projetos/observabilidade`) para o homelab, 
 ```
  pods ──logs──▶ Alloy ──▶ Loki ──┐
  apps ──OTLP──▶ Tempo ───────────┤ (chunks/índice/traces em S3)
-                                 ▼
-                              MinIO  (buckets: loki, tempo)   [local-path PVC]
- pods/nodes ──scrape──▶ Prometheus
-                           │
-                           ▼
-                        Grafana  ◀── datasources: Prometheus + Loki + Tempo
+                 │               ▼
+                 │            MinIO  (buckets: loki, tempo)   [local-path PVC]
+                 │
+                 └─ metrics-generator ──remote_write──▶ Prometheus  (service graph + span metrics/RED)
+ pods/nodes ──scrape──────────────────────────────────▶ Prometheus
+                                                            │
+                                                            ▼
+                        Grafana  ◀── datasources: Prometheus + Loki + Tempo (correlacionados)
                            │  Ingress Traefik → Cloudflare: grafana.mvps.com.br
 ```
+
+### APM / correlação trace ↔ log ↔ métrica
+- **Tempo `metrics-generator`** processa os spans e gera **service graph** + **span metrics** (RED: rate/errors/duration),
+  fazendo **`remote_write`** para o Prometheus (que precisa de `enableRemoteWriteReceiver: true`).
+- **Datasources correlacionados** (ConfigMap `grafana-datasources-homelab`):
+  - **Loki → `derivedFields`**: extrai o `traceID` da linha de log e cria link **log → trace** (abre no Tempo).
+  - **Tempo → `serviceMap`/`nodeGraph`**: monta o service graph a partir das métricas no Prometheus.
+  - **Tempo → `tracesToLogsV2`**: de um span pula pros **logs no Loki** casando `namespace`/`pod` + `traceID`.
+  - **Tempo → `tracesToMetrics`**: liga o span às métricas RED no Prometheus.
+- **Pré-requisito:** as apps precisam **emitir traces OTLP** para `tempo.observability.svc:4317` (gRPC) / `:4318` (HTTP).
+  Sem tráfego OTLP, os painéis de trace/serviço ficam vazios (o resto da stack funciona normal).
+
+## Dashboards (ConfigMaps `grafana_dashboard=1`, carregados pelo sidecar)
+| Dashboard | uid | O que mostra |
+|---|---|---|
+| **Kubernetes — Apps & Logs** | `k8s-apps-logs` | deployments, CPU/memória por pod, taxa de logs e logs (Loki) |
+| **APM — Traces & Serviços** | `apm-traces` | service graph (nodeGraph), RED por serviço (req/s, erros/s, p95) e tabela de traces (TraceQL) → clique no TraceID abre o trace e os logs correlacionados |
 
 ## Deploy (GitOps)
 Os Applications estão em `argocd/apps/` com **sync-waves** (minio → loki/tempo/prometheus → alloy):
