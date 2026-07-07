@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  # multi-source: o chart oficial (Helm) + os manifests deste repo (o bootstrap-secret versionado).
+  # Assim o Argo CD aplica TUDO — 100% GitOps, sem kubectl manual.
+  sources:
+    - repoURL: https://releases.rancher.com/server-charts/stable
+      chart: rancher
+      targetRevision: "2.14.3"
+      helm:
+        values: |
+          # --- Homelab: Traefik + Cloudflare, single-node k3s ---
+          hostname: rancher.mvps.com.br
+
+          # Senha de bootstrap vem do Secret `bootstrap-secret` (versionado em argocd/rancher/,
+          # aplicado pela 2ª source). O chart 2.14.3 não gera sozinho com bootstrapPassword vazio,
+          # então injetamos via extraEnv.
+          bootstrapPassword: ""
+          extraEnv:
+            - name: CATTLE_BOOTSTRAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bootstrap-secret
+                  key: bootstrapPassword
+
+          # single-node: 1 réplica (sem peering/anti-affinity)
+          replicas: 1
+          addLocal: "true"
+
+          # Cloudflare/Traefik terminam o TLS; o Traefik seta X-Forwarded-Proto=https → Rancher
+          # gera links em https (sem mixed-content — NÃO precisa de HAProxy aqui).
+          tls: external
+          agentTLSMode: system-store        # cert público (Cloudflare) — evita strict CA no agente
+
+          # Ingress do próprio chart, na classe do k3s (Traefik). Sem annotations default (são de nginx).
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            includeDefaultExtraAnnotations: false
+
+          auditLog:
+            enabled: false
+          customLogos:
+            enabled: false
+
+    - repoURL: https://github.com/brasleiro01/home-lab/
+      targetRevision: HEAD
+      path: argocd/rancher            # aplica o bootstrap-secret.yaml (o .example e o README são ignorados)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false          # Rancher muta seus próprios recursos; selfHeal brigaria
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true   # CRDs grandes do Rancher
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks
