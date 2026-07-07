@@ -1,0 +1,32 @@
+# Tempo homelab — Single Binary + backend S3 no MinIO (bucket "tempo").
+# Apps enviam OTLP para tempo:4317 (gRPC) / tempo:4318 (HTTP).
+tempo:
+  replicas: 1
+
+  tempo:
+    retention: 72h                   # 3d
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: tempo
+          endpoint: minio.observability.svc:9000
+          access_key: minioadmin
+          secret_key: minioadmin123
+          insecure: true             # MinIO em HTTP (interno)
+          forcepathstyle: true
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+
+  serviceAccount:
+    create: true
+
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 10Gi
