@@ -32,6 +32,14 @@ tempo:
         service_graphs: {}
         span_metrics:
           enable_target_info: true
+          # expõe atributos HTTP como labels das span metrics (200/404/502, método, rota).
+          # cobre semconv antiga (http.status_code) e nova (http.response.status_code).
+          dimensions:
+            - http.status_code
+            - http.response.status_code
+            - http.method
+            - http.request.method
+            - http.route
     # ativa os processadores por tenant (senão o generator não roda)
     overrides:
       defaults:
