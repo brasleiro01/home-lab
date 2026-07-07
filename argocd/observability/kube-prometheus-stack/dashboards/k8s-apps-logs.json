@@ -11,143 +11,83 @@
   "templating": {
     "list": [
       {
-        "name": "namespace",
-        "label": "Namespace",
-        "type": "query",
+        "name": "namespace", "label": "Namespace", "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
         "query": "label_values(kube_pod_info, namespace)",
-        "refresh": 2,
-        "sort": 1,
-        "includeAll": true,
-        "allValue": ".+",
-        "multi": true,
+        "refresh": 2, "sort": 1, "includeAll": true, "allValue": ".+", "multi": true,
         "current": { "text": "All", "value": "$__all" }
       },
       {
-        "name": "pod",
-        "label": "Pod",
-        "type": "query",
+        "name": "pod", "label": "Pod", "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
         "query": "label_values(kube_pod_info{namespace=~\"$namespace\"}, pod)",
-        "refresh": 2,
-        "sort": 1,
-        "includeAll": true,
-        "allValue": ".+",
-        "multi": true,
+        "refresh": 2, "sort": 1, "includeAll": true, "allValue": ".+", "multi": true,
         "current": { "text": "All", "value": "$__all" }
       },
       {
-        "name": "search",
-        "label": "Filtro (texto)",
-        "type": "textbox",
-        "query": "",
-        "current": { "text": "", "value": "" }
+        "name": "search", "label": "Filtro (texto)", "type": "textbox",
+        "query": "", "current": { "text": "", "value": "" }
       }
     ]
   },
   "panels": [
     {
-      "id": 1,
-      "type": "table",
-      "title": "Deployments — réplicas disponíveis",
+      "id": 1, "type": "table", "title": "Deployments — réplicas disponíveis",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "kube_deployment_status_replicas_available{namespace=~\"$namespace\"}",
-          "instant": true,
-          "format": "table"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true, "__name__": true, "job": true, "instance": true,
-              "endpoint": true, "service": true, "container": true, "pod": true,
-              "uid": true, "prometheus": true, "cluster": true, "env": true
-            },
-            "renameByName": { "Value": "réplicas", "deployment": "Deployment", "namespace": "Namespace" }
-          }
-        }
-      ],
+      "targets": [ { "refId": "A", "expr": "kube_deployment_status_replicas_available{namespace=~\"$namespace\"}", "instant": true, "format": "table" } ],
+      "transformations": [ { "id": "organize", "options": {
+        "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "endpoint": true, "service": true, "container": true, "pod": true, "uid": true, "prometheus": true, "cluster": true, "env": true },
+        "renameByName": { "Value": "réplicas", "deployment": "Deployment", "namespace": "Namespace" }
+      } } ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
       "options": { "showHeader": true }
     },
     {
-      "id": 2,
-      "type": "timeseries",
-      "title": "Taxa de logs (linhas/s) por pod",
+      "id": 2, "type": "timeseries", "title": "Taxa de logs (linhas/s) por pod",
       "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum by (pod) (rate({namespace=~\"$namespace\", pod=~\"$pod\"}[5m]))",
-          "legendFormat": "{{pod}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
-      "options": {}
+      "targets": [ { "refId": "A", "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (pod) (rate({namespace=~\"$namespace\", pod=~\"$pod\"}[5m]))", "legendFormat": "{{pod}}" } ],
+      "fieldConfig": { "defaults": { "unit": "logs", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 25, "gradientMode": "opacity", "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
     },
     {
-      "id": 4,
-      "type": "timeseries",
-      "title": "CPU por pod (cores)",
+      "id": 4, "type": "timeseries", "title": "CPU por pod (cores)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"}[5m]))",
-          "legendFormat": "{{pod}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
-      "options": {}
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"}[5m]))", "legendFormat": "{{pod}}" } ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 25, "gradientMode": "opacity", "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
     },
     {
-      "id": 5,
-      "type": "timeseries",
-      "title": "Memória por pod (working set)",
+      "id": 5, "type": "timeseries", "title": "Memória por pod (working set)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"})",
-          "legendFormat": "{{pod}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
-      "options": {}
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=~\"$namespace\", pod=~\"$pod\", container!=\"\"})", "legendFormat": "{{pod}}" } ],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 25, "gradientMode": "opacity", "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
     },
     {
-      "id": 3,
-      "type": "logs",
-      "title": "Logs dos deployments (namespace/pod selecionados)",
+      "id": 6, "type": "timeseries", "title": "Taxa de logs de ERRO (linhas/s) por pod",
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 16 },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} |= \"$search\""
-        }
-      ],
-      "options": {
-        "showTime": true,
-        "wrapLogMessage": true,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
-      }
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 16 },
+      "targets": [ { "refId": "A", "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (pod) (rate({namespace=~\"$namespace\", pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|traceback|critical)\" [5m]))", "legendFormat": "{{pod}}" } ],
+      "fieldConfig": { "defaults": { "unit": "logs", "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 35, "gradientMode": "hue", "lineInterpolation": "smooth", "showPoints": "auto", "pointSize": 5, "spanNulls": true } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } }
+    },
+    {
+      "id": 7, "type": "logs", "title": "Logs de ERRO (somente linhas com erro)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 23 },
+      "targets": [ { "refId": "A", "datasource": { "type": "loki", "uid": "loki" }, "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} |~ \"(?i)(error|exception|fatal|panic|traceback|critical)\"" } ],
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" }
+    },
+    {
+      "id": 3, "type": "logs", "title": "Logs dos deployments (todos — namespace/pod/filtro)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 35 },
+      "targets": [ { "refId": "A", "datasource": { "type": "loki", "uid": "loki" }, "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} |= \"$search\"" } ],
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" }
     }
   ]
 }

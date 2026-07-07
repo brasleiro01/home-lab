@@ -1,0 +1,11 @@
+# Dashboard de uptime (métricas do Uptime Kuma via /metrics scrapeado pelo Prometheus).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-uptime
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  uptime.json: |
+{{ .Files.Get "dashboards/uptime.json" | indent 4 }}

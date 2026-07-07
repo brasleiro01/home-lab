@@ -1,0 +1,28 @@
+# Scrape do /metrics do Uptime Kuma pelo Prometheus (kube-prometheus-stack).
+# O /metrics é protegido por API key → basicAuth (user qualquer, senha = API key).
+# A API key você gera na UI (Settings → API Keys) e guarda no Secret abaixo (SEM hardcode):
+#   kubectl -n uptime-kuma create secret generic uptime-kuma-metrics-auth \
+#     --from-literal=username=metrics \
+#     --from-literal=password=<SUA_API_KEY>
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app: uptime-kuma
+spec:
+  selector:
+    matchLabels:
+      app: uptime-kuma
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      basicAuth:
+        username:
+          name: uptime-kuma-metrics-auth
+          key: username
+        password:
+          name: uptime-kuma-metrics-auth
+          key: password
