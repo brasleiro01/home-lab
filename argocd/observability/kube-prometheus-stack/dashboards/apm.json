@@ -44,7 +44,7 @@
   "panels": [
     {
       "type": "text",
-      "transparent": true,
+      "transparent": false,
       "gridPos": {
         "h": 3,
         "w": 24,
@@ -53,7 +53,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "![meutudo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgNTYiIHdpZHRoPSIyNTAiIGhlaWdodD0iNTYiPgogIDxyZWN0IHg9IjQiIHk9IjgiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcng9IjEzIiBmaWxsPSIjRTYxMTZFIi8+CiAgPHRleHQgeD0iMjQiIHk9IjM5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnQ8L3RleHQ+CiAgPHRleHQgeD0iNTgiIHk9IjM4IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiMxZjI0MzAiPm1ldTx0c3BhbiBmaWxsPSIjRTYxMTZFIj50dWRvLjwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IHg9IjU5IiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBsZXR0ZXItc3BhY2luZz0iMSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzVmNjM2OCI+b2JzZXJ2YWJpbGl0eTwvdGV4dD4KPC9zdmc+)"
+        "content": "![meutudo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMTAgNjAiIHdpZHRoPSIyMTAiIGhlaWdodD0iNjAiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMTAiIGhlaWdodD0iNjAiIHJ4PSIxMiIgZmlsbD0iI2ZmZmZmZiIvPgogIDxjaXJjbGUgY3g9IjMxIiBjeT0iMjkiIHI9IjE3IiBmaWxsPSIjMWQxZDFmIi8+CiAgPHRleHQgeD0iMzEiIHk9IjM4IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnQ8L3RleHQ+CiAgPGNpcmNsZSBjeD0iNDAiIGN5PSIyMCIgcj0iMy40IiBmaWxsPSIjRTYxMTZFIi8+CiAgPHRleHQgeD0iNTciIHk9IjM1IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjMiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMxZDFkMWYiPm1ldTx0c3BhbiBmb250LXdlaWdodD0iODAwIj50dWRvPC90c3Bhbj48dHNwYW4gZmlsbD0iI0U2MTE2RSIgZm9udC13ZWlnaHQ9IjgwMCI+LjwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IHg9IjU4IiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjOGE4Zjk4Ij50dWRvaHViPC90ZXh0Pgo8L3N2Zz4=)"
       },
       "id": 106
     },
@@ -81,7 +81,8 @@
           "queryType": "serviceMap"
         }
       ],
-      "options": {}
+      "options": {},
+      "transparent": false
     },
     {
       "id": 2,
@@ -131,7 +132,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "transparent": false
     },
     {
       "id": 3,
@@ -185,7 +187,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "transparent": false
     },
     {
       "id": 4,
@@ -235,7 +238,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "transparent": false
     },
     {
       "id": 5,
@@ -264,7 +268,8 @@
           "tableType": "traces"
         }
       ],
-      "options": {}
+      "options": {},
+      "transparent": false
     },
     {
       "type": "timeseries",
@@ -384,7 +389,34 @@
         "w": 24,
         "x": 0,
         "y": 31
-      }
+      },
+      "transparent": false
     }
-  ]
+  ],
+  "refresh": "5s",
+  "timepicker": {
+    "refresh_intervals": [
+      "1s",
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  }
 }

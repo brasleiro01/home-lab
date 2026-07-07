@@ -49,10 +49,10 @@ kube-prometheus-stack:
     adminUser: admin
     adminPassword: admin            # homelab (troque se quiser)
     defaultDashboardsEnabled: true
-    # tema claro (white) como padrão de toda a instância do Grafana
+    # tema escuro (padrão) de toda a instância do Grafana
     grafana.ini:
       users:
-        default_theme: light
+        default_theme: dark
     # PVC é RWO (local-path): Recreate evita deadlock de rollout (o pod novo não monta
     # o volume enquanto o antigo o segura). Sem isso, upgrades do Grafana travam.
     deploymentStrategy:
