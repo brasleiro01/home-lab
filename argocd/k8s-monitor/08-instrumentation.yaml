@@ -8,9 +8,11 @@ metadata:
   name: k8s-monitor-otel
   namespace: k8s-monitor
 spec:
-  # traces vão pro Alloy (gateway OTLP) → Tempo. gRPC 4317, FQDN cross-namespace.
+  # traces vão pro Alloy (gateway OTLP) → Tempo. HTTP 4318 (FQDN cross-namespace).
+  # A imagem de auto-instrumentação Python do operator SÓ traz o exporter HTTP
+  # (otlp_proto_http); gRPC quebra com "otlp_proto_grpc not found".
   exporter:
-    endpoint: http://alloy.observability.svc.cluster.local:4317
+    endpoint: http://alloy.observability.svc.cluster.local:4318
   propagators:
     - tracecontext
     - baggage
@@ -18,6 +20,10 @@ spec:
     type: always_on          # homelab: 100% dos traces
   python:
     env:
-      # SDK Python default é gRPC; deixar explícito evita cair em http/protobuf
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: grpc
+        value: http/protobuf
+      # só queremos traces -> Tempo; evita o SDK tentar exportar métricas/logs
+      - name: OTEL_METRICS_EXPORTER
+        value: none
+      - name: OTEL_LOGS_EXPORTER
+        value: none
