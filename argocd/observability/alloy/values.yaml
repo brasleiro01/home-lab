@@ -1,14 +1,51 @@
-# Alloy homelab — DaemonSet que lê logs dos pods e envia ao Loki local.
-# (adaptação do homolog: labels do cluster = homelab; URL do Loki local)
+# Alloy homelab — DaemonSet que:
+#  - lê logs dos pods e envia ao Loki local;
+#  - expõe um receiver OTLP (4317/4318) e reencaminha os traces pro Tempo.
+# (adaptação do homolog: labels do cluster = homelab; URLs locais)
 alloy:
   controller:
     type: daemonset
 
+  # Expõe as portas OTLP no Service do Alloy (apps enviam p/ alloy.observability.svc:4317/4318)
   alloy:
+    extraPorts:
+      - name: otlp-grpc
+        port: 4317
+        targetPort: 4317
+        protocol: TCP
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+        protocol: TCP
     clustering:
       enabled: false
     configMap:
       content: |
+        //// ─── TRACES: receiver OTLP → Tempo ───────────────────────────────
+        // Apps enviam OTLP para alloy.observability.svc:4317 (gRPC) / :4318 (HTTP).
+        otelcol.receiver.otlp "default" {
+          grpc { endpoint = "0.0.0.0:4317" }
+          http { endpoint = "0.0.0.0:4318" }
+          output {
+            traces = [otelcol.processor.batch.default.input]
+          }
+        }
+
+        otelcol.processor.batch "default" {
+          output {
+            traces = [otelcol.exporter.otlp.tempo.input]
+          }
+        }
+
+        // Envia os traces pro Tempo (OTLP gRPC, interno em HTTP → tls insecure)
+        otelcol.exporter.otlp "tempo" {
+          client {
+            endpoint = "tempo.observability.svc:4317"
+            tls { insecure = true }
+          }
+        }
+
+        //// ─── LOGS: pods → Loki ────────────────────────────────────────────
         // Descobre todos os pods do cluster
         discovery.kubernetes "pods" {
           role = "pod"

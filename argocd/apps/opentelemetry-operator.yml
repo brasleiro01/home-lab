@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opentelemetry-operator
+  namespace: argocd
+  annotations:
+    # parte da stack de observabilidade; sobe cedo (a k8s-monitor depende da CRD + webhook)
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brasleiro01/home-lab/
+    targetRevision: HEAD
+    path: argocd/observability/opentelemetry-operator
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability          # parte da stack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false          # cert autogerado muda a cada render; selfHeal brigaria
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true   # CRDs grandes (OpenTelemetryCollector/Instrumentation)
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    # cert do webhook é gerado no render (novo a cada sync) — ignorar p/ não rotacionar
+    - group: ""
+      kind: Secret
+      name: opentelemetry-operator-controller-manager-service-cert
+      namespace: observability
+      jsonPointers:
+        - /data
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: opentelemetry-operator
+description: >-
+  OpenTelemetry Operator (homelab) — auto-instrumentação de apps via Instrumentation CRD.
+  Chart vendorizado (igual Rancher/observability): o Argo CD renderiza local.
+version: 0.1.0
+appVersion: "0.153.0"
+dependencies:
+  - name: opentelemetry-operator
+    version: 0.118.0
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts

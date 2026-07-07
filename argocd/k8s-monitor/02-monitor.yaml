@@ -14,6 +14,12 @@ spec:
     metadata:
       labels:
         app: k8s-monitor
+      annotations:
+        # auto-instrumentação Python pelo OpenTelemetry Operator, usando a
+        # Instrumentation "k8s-monitor-otel" (08-instrumentation.yaml).
+        # O operator injeta o SDK OTel + env (endpoint/serviço/resource attrs)
+        # sem precisar rebuildar a imagem.
+        instrumentation.opentelemetry.io/inject-python: "k8s-monitor-otel"
     spec:
       serviceAccountName: k8s-monitor
       volumes:
