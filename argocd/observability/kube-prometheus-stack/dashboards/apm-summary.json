@@ -41,6 +41,21 @@
   },
   "panels": [
     {
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "![meutudo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgNTYiIHdpZHRoPSIyNTAiIGhlaWdodD0iNTYiPgogIDxyZWN0IHg9IjQiIHk9IjgiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcng9IjEzIiBmaWxsPSIjRTYxMTZFIi8+CiAgPHRleHQgeD0iMjQiIHk9IjM5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnQ8L3RleHQ+CiAgPHRleHQgeD0iNTgiIHk9IjM4IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiPm1ldTx0c3BhbiBmaWxsPSIjRTYxMTZFIj50dWRvLjwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IHg9IjU5IiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBsZXR0ZXItc3BhY2luZz0iMSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzlhYTBhNiI+b2JzZXJ2YWJpbGl0eTwvdGV4dD4KPC9zdmc+)"
+      },
+      "id": 110
+    },
+    {
       "id": 1,
       "type": "stat",
       "title": "Throughput",
@@ -52,7 +67,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 0
+        "y": 3
       },
       "targets": [
         {
@@ -99,7 +114,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 0
+        "y": 3
       },
       "targets": [
         {
@@ -154,7 +169,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 0
+        "y": 3
       },
       "targets": [
         {
@@ -209,7 +224,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 0
+        "y": 3
       },
       "targets": [
         {
@@ -267,7 +282,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 7
       },
       "targets": [
         {
@@ -316,7 +331,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 7
       },
       "targets": [
         {
@@ -386,7 +401,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 16
       },
       "targets": [
         {
@@ -436,7 +451,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 16
       },
       "targets": [
         {
@@ -486,7 +501,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 24
       },
       "targets": [
         {
@@ -739,7 +754,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 33
       }
     }
   ]

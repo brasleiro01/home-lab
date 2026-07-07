@@ -1,108 +1,551 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "graphTooltip": 1,
   "schemaVersion": 39,
-  "tags": ["homelab", "uptime", "uptime-kuma"],
+  "tags": [
+    "homelab",
+    "uptime",
+    "uptime-kuma"
+  ],
   "title": "Uptime — Serviços (Uptime Kuma)",
   "uid": "uptime-kuma",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "templating": {
     "list": [
       {
-        "name": "monitor", "label": "Monitor", "type": "query",
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "name": "monitor",
+        "label": "Monitor",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
         "query": "label_values(monitor_status, monitor_name)",
-        "refresh": 2, "sort": 1, "includeAll": true, "allValue": ".+", "multi": true,
-        "current": { "text": "Todos", "value": "$__all" }
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "allValue": ".+",
+        "multi": true,
+        "current": {
+          "text": "Todos",
+          "value": "$__all"
+        }
       }
     ]
   },
   "panels": [
     {
-      "id": 1, "type": "stat", "title": "Monitores no ar",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
-      "targets": [ { "refId": "A", "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 1) or vector(0)" } ],
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
-      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "![meutudo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgNTYiIHdpZHRoPSIyNTAiIGhlaWdodD0iNTYiPgogIDxyZWN0IHg9IjQiIHk9IjgiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcng9IjEzIiBmaWxsPSIjRTYxMTZFIi8+CiAgPHRleHQgeD0iMjQiIHk9IjM5IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnQ8L3RleHQ+CiAgPHRleHQgeD0iNTgiIHk9IjM4IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjciIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiPm1ldTx0c3BhbiBmaWxsPSIjRTYxMTZFIj50dWRvLjwvdHNwYW4+PC90ZXh0PgogIDx0ZXh0IHg9IjU5IiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBsZXR0ZXItc3BhY2luZz0iMSIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzlhYTBhNiI+b2JzZXJ2YWJpbGl0eTwvdGV4dD4KPC9zdmc+)"
+      },
+      "id": 108
     },
     {
-      "id": 2, "type": "stat", "title": "Monitores fora do ar",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
-      "targets": [ { "refId": "A", "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 0) or vector(0)" } ],
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
-      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
-    },
-    {
-      "id": 3, "type": "stat", "title": "Tempo de resposta (médio)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
-      "targets": [ { "refId": "A", "expr": "avg(monitor_response_time{monitor_name=~\"$monitor\"})" } ],
-      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 1000 } ] } }, "overrides": [] },
-      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } }
-    },
-    {
-      "id": 4, "type": "stat", "title": "Disponibilidade (janela)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
-      "targets": [ { "refId": "A", "expr": "100 * avg(avg_over_time((monitor_status{monitor_name=~\"$monitor\"} == bool 1)[$__range:1m]))" } ],
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 95 }, { "color": "green", "value": 99.5 } ] } }, "overrides": [] },
-      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
-    },
-    {
-      "id": 5, "type": "state-timeline", "title": "Status por monitor (linha do tempo)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 4 },
-      "targets": [ { "refId": "A", "expr": "monitor_status{monitor_name=~\"$monitor\"}", "legendFormat": "{{monitor_name}}" } ],
+      "id": 1,
+      "type": "stat",
+      "title": "Monitores no ar",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 3
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 1) or vector(0)"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 85, "lineWidth": 0 },
-          "mappings": [ { "type": "value", "options": {
-            "0": { "text": "FORA DO AR", "color": "red", "index": 0 },
-            "1": { "text": "NO AR", "color": "green", "index": 1 },
-            "2": { "text": "PENDENTE", "color": "yellow", "index": 2 },
-            "3": { "text": "MANUTENÇÃO", "color": "blue", "index": 3 }
-          } } ],
-          "color": { "mode": "palette-classic" },
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Monitores fora do ar",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 0) or vector(0)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Tempo de resposta (médio)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(monitor_response_time{monitor_name=~\"$monitor\"})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Disponibilidade (janela)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * avg(avg_over_time((monitor_status{monitor_name=~\"$monitor\"} == bool 1)[$__range:1m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 95
+              },
+              {
+                "color": "green",
+                "value": 99.5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "state-timeline",
+      "title": "Status por monitor (linha do tempo)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "monitor_status{monitor_name=~\"$monitor\"}",
+          "legendFormat": "{{monitor_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "FORA DO AR",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "NO AR",
+                  "color": "green",
+                  "index": 1
+                },
+                "2": {
+                  "text": "PENDENTE",
+                  "color": "yellow",
+                  "index": 2
+                },
+                "3": {
+                  "text": "MANUTENÇÃO",
+                  "color": "blue",
+                  "index": 3
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "palette-classic"
+          },
           "noValue": "sem dados"
         },
         "overrides": []
       },
-      "options": { "showValue": "never", "mergeValues": true, "rowHeight": 0.9, "legend": { "displayMode": "list", "placement": "bottom" } }
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     },
     {
-      "id": 6, "type": "timeseries", "title": "Tempo de resposta por monitor (ms)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 13 },
-      "targets": [ { "refId": "A", "expr": "monitor_response_time{monitor_name=~\"$monitor\"}", "legendFormat": "{{monitor_name}}" } ],
-      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 25, "gradientMode": "opacity", "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": true } }, "overrides": [] },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+      "id": 6,
+      "type": "timeseries",
+      "title": "Tempo de resposta por monitor (ms)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "monitor_response_time{monitor_name=~\"$monitor\"}",
+          "legendFormat": "{{monitor_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
     },
     {
-      "id": 7, "type": "timeseries", "title": "Certificado — dias restantes",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 13 },
-      "targets": [ { "refId": "A", "expr": "monitor_cert_days_remaining{monitor_name=~\"$monitor\"}", "legendFormat": "{{monitor_name}}" } ],
-      "fieldConfig": { "defaults": { "unit": "d", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "showPoints": "never", "spanNulls": true }, "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 14 }, { "color": "green", "value": 30 } ] } }, "overrides": [] },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+      "id": 7,
+      "type": "timeseries",
+      "title": "Certificado — dias restantes",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "monitor_cert_days_remaining{monitor_name=~\"$monitor\"}",
+          "legendFormat": "{{monitor_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
     },
     {
-      "id": 8, "type": "table", "title": "Monitores — status atual",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
-      "targets": [ { "refId": "A", "expr": "monitor_status{monitor_name=~\"$monitor\"}", "instant": true, "format": "table" } ],
-      "transformations": [ { "id": "organize", "options": {
-        "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "namespace": true, "service": true, "endpoint": true, "container": true, "pod": true, "monitor_hostname": true, "monitor_port": true, "prometheus": true, "cluster": true, "env": true },
-        "indexByName": { "monitor_name": 0, "monitor_type": 1, "monitor_url": 2, "Value": 3 },
-        "renameByName": { "monitor_name": "Monitor", "monitor_type": "Tipo", "monitor_url": "URL", "Value": "Status" }
-      } } ],
-      "fieldConfig": { "defaults": {}, "overrides": [ { "matcher": { "id": "byName", "options": "Status" }, "properties": [
-        { "id": "mappings", "value": [ { "type": "value", "options": { "0": { "text": "FORA DO AR", "color": "red" }, "1": { "text": "NO AR", "color": "green" }, "2": { "text": "PENDENTE", "color": "yellow" }, "3": { "text": "MANUTENÇÃO", "color": "blue" } } } ] },
-        { "id": "custom.cellOptions", "value": { "type": "color-background" } }
-      ] } ] },
-      "options": { "showHeader": true }
+      "id": 8,
+      "type": "table",
+      "title": "Monitores — status atual",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "monitor_status{monitor_name=~\"$monitor\"}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "namespace": true,
+              "service": true,
+              "endpoint": true,
+              "container": true,
+              "pod": true,
+              "monitor_hostname": true,
+              "monitor_port": true,
+              "prometheus": true,
+              "cluster": true,
+              "env": true
+            },
+            "indexByName": {
+              "monitor_name": 0,
+              "monitor_type": 1,
+              "monitor_url": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "monitor_name": "Monitor",
+              "monitor_type": "Tipo",
+              "monitor_url": "URL",
+              "Value": "Status"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "FORA DO AR",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "NO AR",
+                        "color": "green"
+                      },
+                      "2": {
+                        "text": "PENDENTE",
+                        "color": "yellow"
+                      },
+                      "3": {
+                        "text": "MANUTENÇÃO",
+                        "color": "blue"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true
+      }
     }
   ]
 }
