@@ -36,9 +36,10 @@ data:
 
       - name: Tempo
         uid: tempo
+        # API HTTP do Tempo neste chart (grafana/tempo 1.24.4) escuta na 3200, não 3100
         type: tempo
         access: proxy
-        url: http://tempo.observability.svc:3100
+        url: http://tempo.observability.svc:3200
         jsonData:
           # Service Graph (nodeGraph) a partir das métricas do metrics-generator
           serviceMap:
