@@ -66,6 +66,11 @@ kube-prometheus-stack:
       dashboards:
         enabled: true
         label: grafana_dashboard
+        # organiza em pastas: ConfigMap com annotation grafana_folder vai pra pasta indicada;
+        # sem annotation (dashboards nativos do chart) cai na pasta padrão (General).
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: true
     persistence:
       enabled: true
       storageClassName: local-path
