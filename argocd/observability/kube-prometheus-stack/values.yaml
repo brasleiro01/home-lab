@@ -48,6 +48,10 @@ kube-prometheus-stack:
     adminUser: admin
     adminPassword: admin            # homelab (troque se quiser)
     defaultDashboardsEnabled: true
+    # PVC é RWO (local-path): Recreate evita deadlock de rollout (o pod novo não monta
+    # o volume enquanto o antigo o segura). Sem isso, upgrades do Grafana travam.
+    deploymentStrategy:
+      type: Recreate
     sidecar:
       datasources:
         enabled: true
