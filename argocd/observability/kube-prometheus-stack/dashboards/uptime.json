@@ -14,13 +14,13 @@
         "datasource": { "type": "prometheus", "uid": "prometheus" },
         "query": "label_values(monitor_status, monitor_name)",
         "refresh": 2, "sort": 1, "includeAll": true, "allValue": ".+", "multi": true,
-        "current": { "text": "All", "value": "$__all" }
+        "current": { "text": "Todos", "value": "$__all" }
       }
     ]
   },
   "panels": [
     {
-      "id": 1, "type": "stat", "title": "Monitores UP",
+      "id": 1, "type": "stat", "title": "Monitores no ar",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "targets": [ { "refId": "A", "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 1) or vector(0)" } ],
@@ -28,7 +28,7 @@
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
-      "id": 2, "type": "stat", "title": "Monitores DOWN",
+      "id": 2, "type": "stat", "title": "Monitores fora do ar",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "targets": [ { "refId": "A", "expr": "count(monitor_status{monitor_name=~\"$monitor\"} == 0) or vector(0)" } ],
@@ -36,7 +36,7 @@
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
-      "id": 3, "type": "stat", "title": "Response time médio",
+      "id": 3, "type": "stat", "title": "Tempo de resposta (médio)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "targets": [ { "refId": "A", "expr": "avg(monitor_response_time{monitor_name=~\"$monitor\"})" } ],
@@ -58,22 +58,22 @@
       "targets": [ { "refId": "A", "expr": "monitor_status{monitor_name=~\"$monitor\"}", "legendFormat": "{{monitor_name}}" } ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 80, "lineWidth": 0 },
+          "custom": { "fillOpacity": 85, "lineWidth": 0 },
           "mappings": [ { "type": "value", "options": {
-            "0": { "text": "DOWN", "color": "red" },
-            "1": { "text": "UP", "color": "green" },
-            "2": { "text": "PENDING", "color": "yellow" },
-            "3": { "text": "MAINTENANCE", "color": "blue" }
+            "0": { "text": "FORA DO AR", "color": "red", "index": 0 },
+            "1": { "text": "NO AR", "color": "green", "index": 1 },
+            "2": { "text": "PENDENTE", "color": "yellow", "index": 2 },
+            "3": { "text": "MANUTENÇÃO", "color": "blue", "index": 3 }
           } } ],
-          "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 }, { "color": "yellow", "value": 2 }, { "color": "blue", "value": 3 } ] }
+          "color": { "mode": "palette-classic" },
+          "noValue": "sem dados"
         },
         "overrides": []
       },
       "options": { "showValue": "never", "mergeValues": true, "rowHeight": 0.9, "legend": { "displayMode": "list", "placement": "bottom" } }
     },
     {
-      "id": 6, "type": "timeseries", "title": "Response time por monitor (ms)",
+      "id": 6, "type": "timeseries", "title": "Tempo de resposta por monitor (ms)",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 9, "w": 12, "x": 0, "y": 13 },
       "targets": [ { "refId": "A", "expr": "monitor_response_time{monitor_name=~\"$monitor\"}", "legendFormat": "{{monitor_name}}" } ],
@@ -94,11 +94,12 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
       "targets": [ { "refId": "A", "expr": "monitor_status{monitor_name=~\"$monitor\"}", "instant": true, "format": "table" } ],
       "transformations": [ { "id": "organize", "options": {
-        "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "namespace": true, "service": true, "endpoint": true, "container": true, "pod": true },
+        "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true, "namespace": true, "service": true, "endpoint": true, "container": true, "pod": true, "monitor_hostname": true, "monitor_port": true, "prometheus": true, "cluster": true, "env": true },
+        "indexByName": { "monitor_name": 0, "monitor_type": 1, "monitor_url": 2, "Value": 3 },
         "renameByName": { "monitor_name": "Monitor", "monitor_type": "Tipo", "monitor_url": "URL", "Value": "Status" }
       } } ],
       "fieldConfig": { "defaults": {}, "overrides": [ { "matcher": { "id": "byName", "options": "Status" }, "properties": [
-        { "id": "mappings", "value": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" }, "2": { "text": "PENDING", "color": "yellow" }, "3": { "text": "MAINTENANCE", "color": "blue" } } } ] },
+        { "id": "mappings", "value": [ { "type": "value", "options": { "0": { "text": "FORA DO AR", "color": "red" }, "1": { "text": "NO AR", "color": "green" }, "2": { "text": "PENDENTE", "color": "yellow" }, "3": { "text": "MANUTENÇÃO", "color": "blue" } } } ] },
         { "id": "custom.cellOptions", "value": { "type": "color-background" } }
       ] } ] },
       "options": { "showHeader": true }
