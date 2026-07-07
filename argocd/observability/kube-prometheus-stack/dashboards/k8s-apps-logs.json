@@ -144,7 +144,8 @@
       "options": {
         "showHeader": true,
         "cellHeight": "sm"
-      }
+      },
+      "transparent": true
     },
     {
       "id": 2,
@@ -194,7 +195,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "transparent": true
     },
     {
       "id": 6,
@@ -249,7 +251,8 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "transparent": true
     },
     {
       "id": 4,
@@ -361,7 +364,8 @@
             "desc": true
           }
         ]
-      }
+      },
+      "transparent": true
     },
     {
       "id": 5,
@@ -473,7 +477,8 @@
             "desc": true
           }
         ]
-      }
+      },
+      "transparent": true
     },
     {
       "id": 7,
@@ -487,7 +492,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 37
       },
       "targets": [
         {
@@ -505,7 +510,8 @@
         "enableLogDetails": true,
         "dedupStrategy": "none",
         "sortOrder": "Descending"
-      }
+      },
+      "transparent": true
     },
     {
       "id": 3,
@@ -519,7 +525,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 26
       },
       "targets": [
         {
@@ -537,7 +543,8 @@
         "enableLogDetails": true,
         "dedupStrategy": "none",
         "sortOrder": "Descending"
-      }
+      },
+      "transparent": true
     }
   ]
 }
