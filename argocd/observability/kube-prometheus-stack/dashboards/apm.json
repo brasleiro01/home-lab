@@ -15,7 +15,7 @@
         "label": "Serviço",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "query": "label_values(traces_spanmetrics_calls_total, service_name)",
+        "query": "label_values(traces_spanmetrics_calls_total, service)",
         "refresh": 2,
         "sort": 1,
         "includeAll": true,
@@ -47,8 +47,8 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (service_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\"}[5m]))",
-          "legendFormat": "{{service_name}}"
+          "expr": "sum by (service) (rate(traces_spanmetrics_calls_total{service=~\"$service\"}[5m]))",
+          "legendFormat": "{{service}}"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
@@ -64,8 +64,8 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (service_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
-          "legendFormat": "{{service_name}}"
+          "expr": "sum by (service) (rate(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+          "legendFormat": "{{service}}"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "fixed", "fixedColor": "red" }, "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
@@ -81,11 +81,11 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by (le, service_name) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}[5m])))",
-          "legendFormat": "{{service_name}}"
+          "expr": "histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m])))",
+          "legendFormat": "{{service}}"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
       "options": {}
     },
     {

@@ -1,0 +1,95 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "tags": ["homelab", "postgres", "database"],
+  "title": "Postgres — Banco (k8s-monitor)",
+  "uid": "postgres-db",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "datname", "label": "Database", "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(pg_stat_database_numbackends, datname)",
+        "refresh": 2, "sort": 1, "includeAll": true, "allValue": ".+", "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Postgres UP",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "targets": [ { "refId": "A", "expr": "pg_up" } ],
+      "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } } ], "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } }, "overrides": [] },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Conexões ativas",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "targets": [ { "refId": "A", "expr": "sum(pg_stat_database_numbackends{datname=~\"$datname\"})" } ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 90 } ] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Cache hit ratio",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "targets": [ { "refId": "A", "expr": "sum(rate(pg_stat_database_blks_hit{datname=~\"$datname\"}[5m])) / clamp_min(sum(rate(pg_stat_database_blks_hit{datname=~\"$datname\"}[5m])) + sum(rate(pg_stat_database_blks_read{datname=~\"$datname\"}[5m])), 0.0001)" } ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 0.9 }, { "color": "green", "value": 0.99 } ] } }, "overrides": [] },
+      "options": { "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Tamanho do banco",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "targets": [ { "refId": "A", "expr": "sum(pg_database_size_bytes{datname=~\"$datname\"})" } ],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "options": { "colorMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Transações/s (commit vs rollback)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(pg_stat_database_xact_commit{datname=~\"$datname\"}[5m]))", "legendFormat": "commit" },
+        { "refId": "B", "expr": "sum(rate(pg_stat_database_xact_rollback{datname=~\"$datname\"}[5m]))", "legendFormat": "rollback" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Tuplas/s (fetch/insert/update/delete)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(pg_stat_database_tup_fetched{datname=~\"$datname\"}[5m]))", "legendFormat": "fetched" },
+        { "refId": "B", "expr": "sum(rate(pg_stat_database_tup_inserted{datname=~\"$datname\"}[5m]))", "legendFormat": "inserted" },
+        { "refId": "C", "expr": "sum(rate(pg_stat_database_tup_updated{datname=~\"$datname\"}[5m]))", "legendFormat": "updated" },
+        { "refId": "D", "expr": "sum(rate(pg_stat_database_tup_deleted{datname=~\"$datname\"}[5m]))", "legendFormat": "deleted" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Conexões por banco",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "targets": [ { "refId": "A", "expr": "pg_stat_database_numbackends{datname=~\"$datname\"}", "legendFormat": "{{datname}}" } ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": {}
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Deadlocks/s",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "targets": [ { "refId": "A", "expr": "sum(rate(pg_stat_database_deadlocks{datname=~\"$datname\"}[5m]))", "legendFormat": "deadlocks" } ],
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "fixed", "fixedColor": "red" }, "custom": { "drawStyle": "line", "fillOpacity": 20 } }, "overrides": [] },
+      "options": {}
+    }
+  ]
+}
