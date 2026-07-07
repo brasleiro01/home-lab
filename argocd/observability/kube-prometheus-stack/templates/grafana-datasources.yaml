@@ -1,0 +1,33 @@
+# Datasources do Grafana como código (carregados pelo sidecar via label grafana_datasource=1).
+# Homelab: só datasources LOCAIS (Prometheus, Loki, Tempo) — sem cluster remoto.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-homelab
+  namespace: observability
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        uid: prometheus
+        type: prometheus
+        access: proxy
+        url: http://kube-prometheus-stack-prometheus.observability.svc:9090
+        isDefault: true
+        jsonData:
+          httpMethod: POST
+
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.observability.svc
+
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.observability.svc:3100

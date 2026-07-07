@@ -1,0 +1,84 @@
+# kube-prometheus-stack homelab (adaptação do homolog):
+#  - gp3 -> local-path (default k3s)
+#  - crds.enabled: true (instalação limpa; o Application usa ServerSideApply p/ CRDs grandes)
+#  - desliga componentes que o k3s embute (controller-manager/scheduler/etcd/proxy)
+#  - Grafana exposto pelo Traefik em grafana.mvps.com.br
+kube-prometheus-stack:
+  crds:
+    enabled: true
+
+  prometheusOperator:
+    enabled: true
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      externalLabels:
+        cluster: homelab
+        env: homelab
+      retention: 7d
+      retentionSize: "8GB"
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      probeSelectorNilUsesHelmValues: false
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 2Gi
+
+  grafana:
+    enabled: true
+    adminUser: admin
+    adminPassword: admin            # homelab (troque se quiser)
+    defaultDashboardsEnabled: true
+    sidecar:
+      datasources:
+        enabled: true
+        label: grafana_datasource
+        labelValue: "1"
+        defaultDatasourceEnabled: false
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+    persistence:
+      enabled: true
+      storageClassName: local-path
+      size: 5Gi
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      hosts:
+        - grafana.mvps.com.br
+      # sem bloco tls: Cloudflare/Traefik terminam o TLS
+
+  kube-state-metrics:
+    enabled: true
+  nodeExporter:
+    enabled: true
+
+  # k3s embute esses componentes — desligar evita "targets down" no Prometheus
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeProxy:
+    enabled: false

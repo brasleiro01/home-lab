@@ -1,0 +1,58 @@
+# Alloy homelab — DaemonSet que lê logs dos pods e envia ao Loki local.
+# (adaptação do homolog: labels do cluster = homelab; URL do Loki local)
+alloy:
+  controller:
+    type: daemonset
+
+  alloy:
+    clustering:
+      enabled: false
+    configMap:
+      content: |
+        // Descobre todos os pods do cluster
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        // Normaliza labels úteis
+        discovery.relabel "pods" {
+          targets = discovery.kubernetes.pods.targets
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app"]
+            target_label  = "app"
+          }
+        }
+
+        loki.source.kubernetes "pods" {
+          targets    = discovery.relabel.pods.output
+          forward_to = [loki.process.default.receiver]
+        }
+
+        loki.process "default" {
+          forward_to = [loki.write.default.receiver]
+          stage.static_labels {
+            values = {
+              cluster = "homelab",
+              env     = "homelab",
+            }
+          }
+        }
+
+        // Envia ao Loki local (gateway)
+        loki.write "default" {
+          endpoint {
+            url = "http://loki-gateway.observability.svc/loki/api/v1/push"
+          }
+        }

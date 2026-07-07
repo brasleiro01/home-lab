@@ -1,0 +1,10 @@
+apiVersion: v2
+name: tempo-homelab
+description: Grafana Tempo (traces) para o homelab, com backend S3 no MinIO.
+type: application
+version: 0.1.0
+appVersion: "2.x"
+dependencies:
+  - name: tempo
+    version: "1.24.4"
+    repository: "https://grafana.github.io/helm-charts"

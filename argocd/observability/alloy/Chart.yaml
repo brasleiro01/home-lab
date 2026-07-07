@@ -1,0 +1,10 @@
+apiVersion: v2
+name: alloy-homelab
+description: Grafana Alloy (DaemonSet) — coleta logs dos pods e envia ao Loki.
+type: application
+version: 0.1.0
+appVersion: "1.x"
+dependencies:
+  - name: alloy
+    version: "1.10.0"
+    repository: "https://grafana.github.io/helm-charts"

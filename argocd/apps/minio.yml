@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio               # release name = minio -> service "minio" (Loki/Tempo apontam pra ele)
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"     # sobe primeiro (Loki/Tempo dependem dos buckets)
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brasleiro01/home-lab/
+    targetRevision: HEAD
+    path: argocd/observability/minio
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

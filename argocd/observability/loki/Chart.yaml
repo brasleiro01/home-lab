@@ -1,0 +1,10 @@
+apiVersion: v2
+name: loki-homelab
+description: Grafana Loki (SingleBinary) para o homelab, com backend S3 no MinIO.
+type: application
+version: 0.1.0
+appVersion: "3.x"
+dependencies:
+  - name: loki
+    version: "7.0.0"
+    repository: "https://grafana.github.io/helm-charts"

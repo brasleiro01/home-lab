@@ -7,7 +7,7 @@
   &nbsp;&nbsp;
   <img src="https://argo-cd.readthedocs.io/en/stable/assets/logo.png" height="48" alt="Argo CD"/>
   &nbsp;&nbsp;
-  <img src="https://upload.wikimedia.org/wikipedia/commons/9/94/Cloudflare_Logo.svg" height="36" alt="Cloudflare"/>
+  <img src="https://www.vectorlogo.zone/logos/cloudflare/cloudflare-icon.svg" height="46" alt="Cloudflare"/>
 </p>
 
 # Rancher no homelab (k3s) — umbrella chart vendorizado (igual ao homolog)

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: minio-homelab
+description: MinIO (S3 self-hosted) para simular os buckets do homelab (Loki/Tempo).
+type: application
+version: 0.1.0
+appVersion: "RELEASE"
+dependencies:
+  - name: minio
+    version: "5.4.0"
+    repository: "https://charts.min.io/"

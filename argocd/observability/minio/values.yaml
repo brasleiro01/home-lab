@@ -1,0 +1,30 @@
+# MinIO standalone — substitui o S3 da AWS no homelab. Cria os buckets loki e tempo.
+# Endpoint interno: http://minio.observability.svc:9000  (console :9001)
+minio:
+  mode: standalone
+
+  # Homelab: credenciais versionadas (troque se quiser). Loki/Tempo usam estas chaves.
+  rootUser: minioadmin
+  rootPassword: minioadmin123
+
+  persistence:
+    enabled: true
+    storageClass: local-path       # default do k3s (no lugar do gp3 da AWS)
+    size: 20Gi
+
+  resources:
+    requests:
+      memory: 512Mi
+
+  # buckets provisionados no bootstrap
+  buckets:
+    - name: loki
+      policy: none
+      purge: false
+    - name: tempo
+      policy: none
+      purge: false
+
+  # console/serviço internos (sem ingress); exponha via Traefik depois se quiser
+  consoleService:
+    type: ClusterIP
