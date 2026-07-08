@@ -157,7 +157,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (pod) (rate({namespace=~\"$namespace\", pod=~\"$pod\"} | detected_level=~\"error|critical|fatal\" [5m]))",
+          "expr": "sum by (pod) (rate({namespace=~\"$namespace\", pod=~\"$pod\"} | level=~\"(?i)(error|err|fatal|panic|critical|crit)\" [5m]))",
           "legendFormat": "{{pod}}"
         }
       ],
@@ -439,7 +439,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} | detected_level=~\"error|critical|fatal\""
+          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} | level=~\"(?i)(error|err|fatal|panic|critical|crit)\""
         }
       ],
       "options": {

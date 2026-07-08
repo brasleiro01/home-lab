@@ -79,10 +79,30 @@ alloy:
 
         loki.process "default" {
           forward_to = [loki.write.default.receiver]
+
+          // labels fixos do cluster (usados no selector do match abaixo)
           stage.static_labels {
             values = {
               cluster = "homelab",
               env     = "homelab",
+            }
+          }
+
+          // 1) nível explícito na linha (INFO/WARN/ERROR/...) → extrai p/ label "level".
+          //    Sem lowercase (o chart roda tpl no config); o filtro no dashboard é case-insensitive.
+          stage.regex {
+            expression = "(?i)(?P<level>trace|debug|notice|informational|info|warning|warn|error|err|critical|crit|fatal|panic|alert|emergency)"
+          }
+          stage.labels {
+            values = { level = "level" }
+          }
+
+          // 2) linhas com CARA de erro mas sem nível explícito (ex.: "failed to create
+          //    fsnotify watcher: too many open files") → força level=error
+          stage.match {
+            selector = "{cluster=\"homelab\"} |~ \"(?i)(exception|traceback|panic|fatal|failed|failure|cannot |unable to|denied|timeout|refused|too many open files|out of memory|segfault)\""
+            stage.static_labels {
+              values = { level = "error" }
             }
           }
         }
