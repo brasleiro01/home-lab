@@ -24,7 +24,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(monitor_status, monitor_name)",
         "refresh": 2,
@@ -61,7 +61,7 @@
       "title": "Monitores no ar",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -102,7 +102,7 @@
       "title": "Monitores fora do ar",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -154,7 +154,7 @@
       "title": "Tempo de resposta (médio)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -210,7 +210,7 @@
       "title": "Disponibilidade (janela)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -269,7 +269,7 @@
       "title": "Status por monitor (linha do tempo)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -341,7 +341,7 @@
       "title": "Tempo de resposta por monitor (ms)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -388,7 +388,7 @@
       "title": "Certificado — dias restantes",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -451,10 +451,10 @@
     {
       "id": 8,
       "type": "table",
-      "title": "Monitores — status atual",
+      "title": "Monitores — status atual (+ código HTTP)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -464,43 +464,76 @@
       },
       "targets": [
         {
-          "refId": "A",
-          "expr": "monitor_status{monitor_name=~\"$monitor\"}",
+          "refId": "STATUS",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "expr": "label_replace(monitor_status, \"url\", \"$1\", \"monitor_url\", \"(.*?)/*$\")"
+        },
+        {
+          "refId": "HTTP",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "instant": true,
+          "format": "table",
+          "expr": "label_replace(probe_http_status_code, \"url\", \"$1\", \"instance\", \"(.*?)/*$\")"
         }
       ],
       "transformations": [
         {
+          "id": "joinByField",
+          "options": {
+            "field": "url",
+            "mode": "outer"
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "job": true,
+              "Time 1": true,
+              "Time 2": true,
+              "__name__ 1": true,
+              "__name__ 2": true,
+              "job 1": true,
+              "job 2": true,
               "instance": true,
-              "namespace": true,
-              "service": true,
-              "endpoint": true,
-              "container": true,
-              "pod": true,
-              "monitor_hostname": true,
-              "monitor_port": true,
-              "prometheus": true,
-              "cluster": true,
-              "env": true
+              "monitor_url": true,
+              "namespace 1": true,
+              "namespace 2": true,
+              "service 1": true,
+              "service 2": true,
+              "container 1": true,
+              "container 2": true,
+              "pod 1": true,
+              "pod 2": true,
+              "endpoint 1": true,
+              "endpoint 2": true,
+              "prometheus 1": true,
+              "prometheus 2": true,
+              "env": true,
+              "tipo": true,
+              "cluster 1": true,
+              "cluster 2": true
             },
             "indexByName": {
               "monitor_name": 0,
               "monitor_type": 1,
-              "monitor_url": 2,
-              "Value": 3
+              "url": 2,
+              "Value #STATUS": 3,
+              "Value #HTTP": 4
             },
             "renameByName": {
               "monitor_name": "Monitor",
               "monitor_type": "Tipo",
-              "monitor_url": "URL",
-              "Value": "Status"
+              "url": "URL",
+              "Value #STATUS": "Status",
+              "Value #HTTP": "HTTP"
             }
           }
         }
@@ -547,132 +580,6 @@
                 }
               }
             ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true
-      },
-      "transparent": false
-    },
-    {
-      "id": 109,
-      "type": "table",
-      "transparent": false,
-      "title": "Status HTTP (Blackbox) — código e disponibilidade",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 33
-      },
-      "targets": [
-        {
-          "refId": "UP",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "instant": true,
-          "format": "table",
-          "expr": "probe_success"
-        },
-        {
-          "refId": "CODE",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "instant": true,
-          "format": "table",
-          "expr": "probe_http_status_code"
-        },
-        {
-          "refId": "DUR",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "instant": true,
-          "format": "table",
-          "expr": "probe_duration_seconds"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "job": true,
-              "namespace": true,
-              "service": true,
-              "endpoint": true,
-              "container": true,
-              "pod": true,
-              "prometheus": true,
-              "env": true,
-              "tipo": true,
-              "cluster": true
-            },
-            "indexByName": {
-              "instance": 0,
-              "Value #UP": 1,
-              "Value #CODE": 2,
-              "Value #DUR": 3
-            },
-            "renameByName": {
-              "instance": "Endpoint",
-              "Value #UP": "Disponível",
-              "Value #CODE": "HTTP",
-              "Value #DUR": "Duração"
-            }
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Disponível"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "1": {
-                        "text": "UP",
-                        "color": "green"
-                      },
-                      "0": {
-                        "text": "DOWN",
-                        "color": "red"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
           },
           {
             "matcher": {
@@ -706,31 +613,14 @@
                 }
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Duração"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "s"
-              }
-            ]
           }
         ]
       },
       "options": {
         "showHeader": true,
-        "cellHeight": "sm",
-        "sortBy": [
-          {
-            "displayName": "HTTP",
-            "desc": true
-          }
-        ]
-      }
+        "cellHeight": "sm"
+      },
+      "transparent": false
     }
   ],
   "refresh": "5s",
