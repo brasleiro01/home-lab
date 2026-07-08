@@ -49,9 +49,12 @@ data:
           # de um span, pular pros logs no Loki (trace -> logs) casando namespace/pod + trace id
           tracesToLogsV2:
             datasourceUid: loki
-            filterByTraceID: true
-            spanStartTimeShift: '-1h'
-            spanEndTimeShift: '1h'
+            # false: a app nao escreve o trace_id nas linhas de log, entao correlacionamos
+            # por namespace/pod + janela de tempo do span (senao "No logs found").
+            filterByTraceID: false
+            filterBySpanID: false
+            spanStartTimeShift: '-5m'
+            spanEndTimeShift: '5m'
             # key = atributo do span (convenção semântica do OTel Operator);
             # value = label no Loki (setado pelo Alloy). Casa trace -> logs por ns/pod.
             tags:
