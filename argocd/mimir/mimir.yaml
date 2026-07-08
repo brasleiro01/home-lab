@@ -37,6 +37,10 @@ data:
       bucket_store:
         sync_dir: /data/tsdb-sync
 
+    ruler:
+      # diretório local do ruler (padrão ./data-ruler não é gravável p/ não-root)
+      rule_path: /data/ruler
+
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
