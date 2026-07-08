@@ -1,7 +1,7 @@
 # OpenTelemetry Operator — homelab.
-# Sem cert-manager no cluster: o próprio chart gera o cert do webhook (autoGenerateCert).
-# O Argo CD ignora o caBundle/secret do cert (ver ignoreDifferences no Application),
-# senão o cert seria "rotacionado" a cada sync (helm template gera um novo a cada render).
+# O cluster TEM cert-manager: ele gera e injeta o cert do webhook + o CA das CRDs.
+# (antes usávamos autoGenerateCert, mas isso deixava a CRD com annotation inválida
+#  "cert-manager.io/inject-ca-from: none" e o cert-manager falhava em loop.)
 opentelemetry-operator:
   manager:
     # coletor não é usado aqui (só auto-instrumentação); mantém defaults do operator
@@ -15,10 +15,9 @@ opentelemetry-operator:
 
   admissionWebhooks:
     certManager:
-      enabled: false        # não temos cert-manager
+      enabled: true         # usa o cert-manager do cluster
     autoGenerateCert:
-      enabled: true
-      recreate: false       # não regerar cert a cada upgrade
+      enabled: false
 
   # CRDs (Instrumentation, OpenTelemetryCollector, ...) renderizadas pelo chart
   crds:
