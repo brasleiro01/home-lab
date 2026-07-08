@@ -21,7 +21,7 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: false          # cert autogerado muda a cada render; selfHeal brigaria
+      selfHeal: false          # cert-manager injeta o caBundle; selfHeal brigaria com ele
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true   # CRDs grandes (OpenTelemetryCollector/Instrumentation)
@@ -32,13 +32,11 @@ spec:
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
-    # cert do webhook é gerado no render (novo a cada sync) — ignorar p/ não rotacionar
-    - group: ""
-      kind: Secret
-      name: opentelemetry-operator-controller-manager-service-cert
-      namespace: observability
+    # o cert-manager injeta o caBundle nas CRDs (conversion) e nos webhooks — ignorar p/ não brigar
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
       jsonPointers:
-        - /data
+        - /spec/conversion/webhook/clientConfig/caBundle
     - group: admissionregistration.k8s.io
       kind: MutatingWebhookConfiguration
       jsonPointers:
