@@ -60,7 +60,7 @@
     {
       "id": 1,
       "type": "nodeGraph",
-      "title": "Service Graph (dependências entre serviços)",
+      "title": "Mapa de Serviços (dependências) — passe o mouse nos nós",
       "datasource": {
         "type": "tempo",
         "uid": "tempo"
@@ -82,7 +82,19 @@
         }
       ],
       "options": {},
-      "transparent": false
+      "transparent": false,
+      "description": "Mapa de dependências entre serviços (quem chama quem). Cada círculo é um serviço; a seta vai do CHAMADOR para o CHAMADO. Números no nó: tempo médio por requisição (ms/r) e throughput (r/sec). O anel verde/vermelho mostra a proporção de sucesso/erro. 'user' = origem externa das chamadas. Passe o mouse num nó/seta para ver os detalhes.",
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Ver detalhes do serviço (APM)",
+              "url": "/d/apm-summary/apm?var-service=${__data.fields.id}&${__url_time_range}",
+              "targetBlank": false
+            }
+          ]
+        }
+      }
     },
     {
       "id": 2,
