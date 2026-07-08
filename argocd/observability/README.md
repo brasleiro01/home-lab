@@ -5,7 +5,7 @@
   &nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/minio/C72E49" height="44" alt="MinIO"/>
   &nbsp;&nbsp;
-  <img src="https://www.vectorlogo.zone/logos/opentelemetry/opentelemetry-icon.svg" height="46" alt="OpenTelemetry"/>
+  <img src="https://raw.githubusercontent.com/cncf/artwork/master/projects/opentelemetry/icon/color/opentelemetry-icon-color.svg" height="46" alt="OpenTelemetry"/>
   &nbsp;&nbsp;
   <img src="https://argo-cd.readthedocs.io/en/stable/assets/logo.png" height="46" alt="Argo CD"/>
 </p>
