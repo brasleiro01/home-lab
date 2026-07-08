@@ -24,6 +24,12 @@ minio:
     - name: tempo
       policy: none
       purge: false
+    - name: mimir-blocks     # métricas de longo prazo (Mimir)
+      policy: none
+      purge: false
+    - name: mimir-ruler      # storage do ruler do Mimir (exigido pelo -target=all)
+      policy: none
+      purge: false
 
   # console/serviço internos (sem ingress); exponha via Traefik depois se quiser
   consoleService:

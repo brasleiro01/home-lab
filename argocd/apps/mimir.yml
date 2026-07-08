@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mimir
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"   # depois do minio (buckets)
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brasleiro01/home-lab/
+    targetRevision: HEAD
+    path: argocd/mimir
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

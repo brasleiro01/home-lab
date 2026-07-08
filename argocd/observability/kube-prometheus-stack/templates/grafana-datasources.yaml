@@ -65,3 +65,18 @@ data:
           # RED/latência por serviço a partir das span metrics
           tracesToMetrics:
             datasourceUid: prometheus
+
+      - name: Pyroscope
+        uid: pyroscope
+        type: grafana-pyroscope-datasource
+        access: proxy
+        url: http://pyroscope.observability.svc:4040
+
+      - name: Mimir
+        uid: mimir
+        # métricas de longo prazo (15d) — API PromQL do Mimir fica em /prometheus
+        type: prometheus
+        access: proxy
+        url: http://mimir.observability.svc:8080/prometheus
+        jsonData:
+          httpMethod: POST
