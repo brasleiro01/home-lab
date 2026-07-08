@@ -88,25 +88,36 @@ alloy:
             }
           }
 
-          // 1) nível explícito na linha (INFO/WARN/ERROR/...) → extrai p/ label "level".
-          //    Sem lowercase (o chart roda tpl no config); o filtro no dashboard é case-insensitive.
-          stage.regex {
-            expression = "(?i)(?P<level>trace|debug|notice|informational|info|warning|warn|error|err|critical|crit|fatal|panic|alert|emergency)"
-          }
-          stage.labels {
-            values = { level = "level" }
-          }
+          // ORDEM IMPORTA: os estágios seguintes SOBRESCREVEM o label "level".
+          // Vai do palpite mais fraco (palavra solta) ao mais forte (campo level= e klog),
+          // pra o nível REAL vencer. Isso evita falso positivo quando a linha contém a
+          // palavra "error" só de passagem (ex.: o Grafana logando a própria query LogQL).
 
-          // 2) linhas com CARA de erro mas sem nível explícito (ex.: "failed to create
-          //    fsnotify watcher: too many open files") → força level=error
+          // 1) palpite: linha com CARA de erro sem nível → error (fraco; será sobrescrito se houver nível real)
           stage.match {
-            selector = "{cluster=\"homelab\"} |~ \"(?i)(exception|traceback|panic|fatal|failed|failure|cannot |unable to|denied|timeout|refused|too many open files|out of memory|segfault)\""
+            selector = "{cluster=\"homelab\"} |~ \"(?i)(exception|traceback|failed|failure|cannot |unable to|denied|timeout|refused|too many open files|out of memory|segfault)\""
             stage.static_labels {
               values = { level = "error" }
             }
           }
 
-          // 3) formato klog do Kubernetes/Go (cert-manager, kube-*, etc.): a 1a letra da
+          // 2) nível como PALAVRA isolada (apps que imprimem "INFO"/"ERROR"); \b evita casar dentro de outra palavra
+          stage.regex {
+            expression = "(?i)\\b(?P<level>trace|debug|info|warning|warn|error|err|critical|crit|fatal|panic)\\b"
+          }
+          stage.labels {
+            values = { level = "level" }
+          }
+
+          // 3) campo logfmt "level=xxx" (Grafana, Loki, muitos apps) — AUTORITATIVO, sobrescreve os palpites acima
+          stage.regex {
+            expression = "(?:^|\\s)level=(?P<level>[a-zA-Z]+)"
+          }
+          stage.labels {
+            values = { level = "level" }
+          }
+
+          // 4) formato klog do Kubernetes/Go (cert-manager, kube-*, etc.): a 1a letra da
           //    linha é o nível — I=info, W=warn, E=error, F=fatal (ex.: "I0708 00:12:...").
           stage.match {
             selector = "{cluster=\"homelab\"} |~ \"^I[0-9]{4} \""
