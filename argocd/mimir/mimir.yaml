@@ -39,8 +39,6 @@ data:
 
     compactor:
       data_dir: /data/compactor
-      sharding_ring:
-        replication_factor: 1
 
     ingester:
       ring:
