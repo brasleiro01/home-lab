@@ -66,6 +66,30 @@
           "text": "",
           "value": ""
         }
+      },
+      {
+        "name": "lvl",
+        "label": "Logs",
+        "type": "custom",
+        "query": "Todos : .*, Só erros : (?i)(error|err|fatal|panic|critical|crit)",
+        "includeAll": false,
+        "multi": false,
+        "current": {
+          "text": "Todos",
+          "value": ".*"
+        },
+        "options": [
+          {
+            "text": "Todos",
+            "value": ".*",
+            "selected": true
+          },
+          {
+            "text": "Só erros",
+            "value": "(?i)(error|err|fatal|panic|critical|crit)",
+            "selected": false
+          }
+        ]
       }
     ]
   },
@@ -419,48 +443,15 @@
       "transparent": false
     },
     {
-      "id": 7,
-      "type": "logs",
-      "title": "Logs de ERRO (somente linhas com erro)",
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
-      },
-      "gridPos": {
-        "h": 11,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} | level=~\"(?i)(error|err|fatal|panic|critical|crit)\""
-        }
-      ],
-      "options": {
-        "showTime": true,
-        "wrapLogMessage": true,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
-      },
-      "transparent": false
-    },
-    {
       "id": 3,
       "type": "logs",
-      "title": "Logs dos deployments (todos — namespace/pod/filtro)",
+      "title": "Logs dos deployments (use \"Logs\" no topo p/ ver só erros)",
       "datasource": {
         "type": "loki",
         "uid": "loki"
       },
       "gridPos": {
-        "h": 12,
+        "h": 16,
         "w": 24,
         "x": 0,
         "y": 20
@@ -472,7 +463,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} |= \"$search\""
+          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"} | level=~\"${lvl:raw}\" |= \"$search\""
         }
       ],
       "options": {
