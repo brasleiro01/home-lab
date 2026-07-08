@@ -10,6 +10,10 @@ data:
   mimir.yaml: |
     multitenancy_enabled: false
 
+    # grava o log do activity-tracker no PVC (o diretório de trabalho não é gravável p/ não-root)
+    activity_tracker:
+      filepath: /data/metrics-activity.log
+
     server:
       http_listen_port: 8080
       grpc_listen_port: 9095
