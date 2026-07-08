@@ -1,0 +1,24 @@
+# Blackbox Exporter homelab. fullnameOverride fixa o nome do Service (blackbox-exporter:9115)
+# p/ o campo prober.url dos Probes ficar previsível.
+prometheus-blackbox-exporter:
+  fullnameOverride: blackbox-exporter
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits:   { cpu: 100m, memory: 64Mi }
+  # não criar Probe/ServiceMonitor pelo chart — os alvos ficam nos nossos Probe CRs
+  serviceMonitor:
+    enabled: false
+  # módulos de prova (defaults cobrem http/tcp/dns); http_2xx aceita 2xx e segue redirect
+  config:
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          valid_status_codes: []          # vazio = qualquer 2xx
+          follow_redirects: true
+          preferred_ip_protocol: ip4
+      tcp_connect:
+        prober: tcp
+        timeout: 5s

@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sloth
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"   # depois da CRD; antes não faz diferença p/ os PrometheusRules
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brasleiro01/home-lab/
+    targetRevision: HEAD
+    path: argocd/observability/sloth
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true    # CRD do Sloth é grande
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

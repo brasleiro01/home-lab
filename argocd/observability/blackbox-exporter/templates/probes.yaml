@@ -1,0 +1,24 @@
+# Alvos de prova como CÓDIGO (CRD Probe do prometheus-operator). Adicione/edite URLs aqui e
+# faça commit — o Prometheus captura estes Probe (probeSelectorNilUsesHelmValues=false).
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: external-http
+  namespace: observability
+  labels:
+    release: kube-prometheus-stack
+spec:
+  jobName: blackbox-http
+  interval: 30s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.observability.svc:9115
+  targets:
+    staticConfig:
+      static:
+        - https://grafana.mvps.com.br
+        - https://uptime.mvps.com.br
+        - https://k8s-monitor.mvps.com.br
+      labels:
+        env: homelab
+        tipo: externo

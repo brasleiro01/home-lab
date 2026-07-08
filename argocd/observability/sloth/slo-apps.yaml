@@ -1,0 +1,35 @@
+# SLOs (Sloth) — a partir das span metrics do Tempo (RED). O controller do Sloth lê este
+# PrometheusServiceLevel e GERA os PrometheusRules (recording + alertas multi-janela de burn-rate).
+# Os alertas caem no Alertmanager -> Discord (severity warning/critical).
+# Para adicionar outro serviço, duplique o bloco trocando o service e o filtro service="...".
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: k8s-monitor-slo
+  namespace: observability
+  labels:
+    release: kube-prometheus-stack
+spec:
+  service: k8s-monitor
+  labels:
+    team: sre
+  slos:
+    - name: requests-availability
+      objective: 99.5          # 99,5% de sucesso (error budget = 0,5%)
+      description: "Disponibilidade das requisições do k8s-monitor (não-erro) via span metrics."
+      sli:
+        events:
+          errorQuery: sum(rate(traces_spanmetrics_calls_total{service="k8s-monitor", status_code="STATUS_CODE_ERROR"}[{{.window}}]))
+          totalQuery: sum(rate(traces_spanmetrics_calls_total{service="k8s-monitor"}[{{.window}}]))
+      alerting:
+        name: K8sMonitorAvailability
+        labels:
+          category: availability
+        annotations:
+          summary: "Burn rate alto do SLO de disponibilidade do k8s-monitor"
+        pageAlert:
+          labels:
+            severity: critical
+        ticketAlert:
+          labels:
+            severity: warning

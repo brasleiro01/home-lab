@@ -1,0 +1,17 @@
+# Pyroscope homelab — monolítico (1 réplica), storage em filesystem/PVC (local-path).
+# Recebe profiles do Alloy (pyroscope.write) e o Grafana consulta via datasource.
+pyroscope:
+  pyroscope:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      storageClassName: local-path
+      size: 10Gi
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits:   { cpu: "1", memory: 1Gi }
+  # dependências do chart que não usamos no homelab
+  minio:
+    enabled: false
+  alloy:
+    enabled: false

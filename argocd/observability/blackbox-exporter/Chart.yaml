@@ -1,0 +1,11 @@
+apiVersion: v2
+name: blackbox-exporter
+description: >-
+  Prometheus Blackbox Exporter (homelab) — probes HTTP/TCP/DNS/TLS declarativos.
+  Chart vendorizado; alvos definidos via CRD Probe (URLs como código).
+version: 0.1.0
+appVersion: "0.28.0"
+dependencies:
+  - name: prometheus-blackbox-exporter
+    version: 11.15.1
+    repository: https://prometheus-community.github.io/helm-charts

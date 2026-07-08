@@ -16,9 +16,12 @@ kube-prometheus-stack:
       externalLabels:
         cluster: homelab
         env: homelab
-      retention: 7d
+      retention: 7d                      # local (curto prazo); longo prazo (15d) fica no Mimir
       retentionSize: "8GB"
       enableRemoteWriteReceiver: true    # recebe métricas (span/service-graph) do metrics-generator do Tempo
+      # envia todas as métricas pro Mimir (longo prazo / visão global / multi-cluster futuro)
+      remoteWrite:
+        - url: http://mimir.observability.svc:8080/api/v1/push
       serviceMonitorSelectorNilUsesHelmValues: false
       podMonitorSelectorNilUsesHelmValues: false
       ruleSelectorNilUsesHelmValues: false
@@ -43,6 +46,119 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 2Gi
+      # monta o secret com o webhook do Discord em /etc/alertmanager/secrets/alertmanager-discord/
+      # (você cria o secret via kubectl — o webhook NÃO fica no git):
+      #   kubectl -n observability create secret generic alertmanager-discord \
+      #     --from-literal=webhook-url='https://discord.com/api/webhooks/ID/TOKEN'
+      secrets:
+        - alertmanager-discord
+    # roteamento + receiver Discord (webhook lido de arquivo do secret montado)
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        receiver: discord
+        group_by: ["alertname", "namespace"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+        routes:
+          # Watchdog = "dead-man's-switch": dispara sempre; silenciado aqui p/ não spammar
+          - receiver: "null"
+            matchers:
+              - alertname = "Watchdog"
+      receivers:
+        - name: "null"
+        - name: discord
+          discord_configs:
+            - webhook_url_file: /etc/alertmanager/secrets/alertmanager-discord/webhook-url
+              send_resolved: true
+
+  # Regras CUSTOM (APM/app). Infra (CrashLoop, PVC, nó, TargetDown, Watchdog...) já vem em defaultRules.
+  # Vai como VALOR (não template) => o Helm NÃO mexe nos {{ $labels }}/{{ $value }} do Prometheus.
+  additionalPrometheusRulesMap:
+    custom-app-alerts:
+      groups:
+        - name: apm.rules
+          rules:
+            - alert: APMHighErrorRate
+              expr: 100 * sum by (service) (rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m])) / clamp_min(sum by (service) (rate(traces_spanmetrics_calls_total[5m])), 0.001) > 5
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Taxa de erro alta no serviço {{ $labels.service }}"
+                description: "{{ $labels.service }} com {{ $value | printf \"%.1f\" }}% de erros (>5%) há 10min."
+            - alert: APMHighLatencyP95
+              expr: histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket[5m]))) > 1
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Latência p95 alta no serviço {{ $labels.service }}"
+                description: "p95 de {{ $labels.service }} acima de 1s há 10min."
+        - name: database.rules
+          rules:
+            - alert: PostgresDown
+              expr: pg_up == 0
+              for: 5m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Postgres fora do ar"
+                description: "postgres-exporter reporta pg_up=0 há 5min ({{ $labels.instance }})."
+            - alert: PostgresTooManyConnections
+              expr: sum by (instance) (pg_stat_database_numbackends) > 80
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Muitas conexões no Postgres"
+                description: "{{ $value }} conexões ativas (>80) há 10min."
+        - name: uptime.rules
+          rules:
+            - alert: UptimeMonitorDown
+              expr: monitor_status == 0
+              for: 3m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Serviço fora do ar: {{ $labels.monitor_name }}"
+                description: "Uptime Kuma reporta {{ $labels.monitor_name }} DOWN há 3min."
+            - alert: UptimeCertExpiringSoon
+              expr: min by (monitor_name) (monitor_cert_days_remaining) < 14
+              for: 1h
+              labels:
+                severity: warning
+              annotations:
+                summary: "Certificado expirando: {{ $labels.monitor_name }}"
+                description: "Certificado de {{ $labels.monitor_name }} expira em menos de 14 dias."
+        - name: blackbox.rules
+          rules:
+            - alert: BlackboxProbeFailed
+              expr: probe_success == 0
+              for: 5m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Endpoint fora do ar: {{ $labels.instance }}"
+                description: "A prova (blackbox) de {{ $labels.instance }} falhou há 5min."
+            - alert: BlackboxSslCertExpiringSoon
+              expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 14
+              for: 1h
+              labels:
+                severity: warning
+              annotations:
+                summary: "Certificado TLS expirando: {{ $labels.instance }}"
+                description: "O certificado de {{ $labels.instance }} expira em menos de 14 dias."
+            - alert: BlackboxSlowResponse
+              expr: probe_duration_seconds > 2
+              for: 10m
+              labels:
+                severity: warning
+              annotations:
+                summary: "Endpoint lento: {{ $labels.instance }}"
+                description: "{{ $labels.instance }} respondendo em mais de 2s há 10min."
 
   grafana:
     enabled: true

@@ -5,9 +5,14 @@
 alloy:
   controller:
     type: daemonset
+    hostPID: true          # eBPF (Pyroscope) precisa enxergar os PIDs do nó
 
   # Expõe as portas OTLP no Service do Alloy (apps enviam p/ alloy.observability.svc:4317/4318)
   alloy:
+    # eBPF profiling exige container privilegiado como root
+    securityContext:
+      privileged: true
+      runAsUser: 0
     extraPorts:
       - name: otlp-grpc
         port: 4317
@@ -141,5 +146,40 @@ alloy:
         loki.write "default" {
           endpoint {
             url = "http://loki-gateway.observability.svc/loki/api/v1/push"
+          }
+        }
+
+        //// ─── PROFILES: eBPF → Pyroscope ───────────────────────────────────
+        // Perfila (CPU) os processos dos pods por eBPF, sem tocar nas apps.
+        // Single-node: mira todos os pods; em multi-node, cada Alloy só resolve os PIDs locais.
+        discovery.relabel "ebpf" {
+          targets = discovery.kubernetes.pods.targets
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
+            separator     = "/"
+            target_label  = "service_name"
+          }
+        }
+
+        pyroscope.ebpf "default" {
+          forward_to = [pyroscope.write.default.receiver]
+          targets    = discovery.relabel.ebpf.output
+        }
+
+        pyroscope.write "default" {
+          endpoint {
+            url = "http://pyroscope.observability.svc:4040"
           }
         }
