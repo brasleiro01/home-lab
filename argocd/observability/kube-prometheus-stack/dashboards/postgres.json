@@ -24,7 +24,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(pg_stat_database_numbackends, datname)",
         "refresh": 2,
@@ -61,7 +61,7 @@
       "title": "Postgres UP",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 5,
@@ -126,7 +126,7 @@
       "title": "Conexões ativas",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 5,
@@ -182,7 +182,7 @@
       "title": "Cache hit ratio",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 5,
@@ -239,7 +239,7 @@
       "title": "Tamanho do banco",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 5,
@@ -275,7 +275,7 @@
       "title": "Transações/s (commit vs rollback)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -327,7 +327,7 @@
       "title": "Tuplas/s (fetch/insert/update/delete)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -389,7 +389,7 @@
       "title": "Conexões por banco",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -436,7 +436,7 @@
       "title": "Deadlocks/s",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,

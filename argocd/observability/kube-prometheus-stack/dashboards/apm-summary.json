@@ -24,7 +24,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(traces_spanmetrics_calls_total, service)",
         "refresh": 2,
@@ -61,7 +61,7 @@
       "title": "Throughput",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -109,7 +109,7 @@
       "title": "Error rate",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -165,7 +165,7 @@
       "title": "Response time (avg)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -221,7 +221,7 @@
       "title": "Apdex (T=0.5s)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 4,
@@ -280,7 +280,7 @@
       "title": "Tempo das transações (por tipo de span)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -330,7 +330,7 @@
       "title": "Apdex score",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -401,7 +401,7 @@
       "title": "Throughput (rpm)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -452,7 +452,7 @@
       "title": "Errors (taxa %)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 8,
@@ -503,7 +503,7 @@
       "title": "Transações mais lentas (por tempo total)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -651,7 +651,7 @@
       "title": "Requisições por status HTTP",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "targets": [
         {

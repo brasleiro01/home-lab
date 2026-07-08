@@ -16,7 +16,7 @@ data:
         type: prometheus
         access: proxy
         url: http://kube-prometheus-stack-prometheus.observability.svc:9090
-        isDefault: true
+        isDefault: false          # curto prazo (7d); consultas ad-hoc
         jsonData:
           httpMethod: POST
 
@@ -74,9 +74,11 @@ data:
 
       - name: Mimir
         uid: mimir
-        # métricas de longo prazo (15d) — API PromQL do Mimir fica em /prometheus
+        # métricas de longo prazo (15d) + recente (via remote_write) — datasource PRINCIPAL.
+        # API PromQL do Mimir fica em /prometheus.
         type: prometheus
         access: proxy
         url: http://mimir.observability.svc:8080/prometheus
+        isDefault: true
         jsonData:
           httpMethod: POST

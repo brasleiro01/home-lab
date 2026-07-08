@@ -61,7 +61,7 @@
       "title": "SLOs — objetivo · budget restante · burn rate",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "transparent": false,
       "gridPos": {
@@ -75,7 +75,7 @@
           "refId": "OBJ",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -85,7 +85,7 @@
           "refId": "BUD",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -95,7 +95,7 @@
           "refId": "BURN",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -243,7 +243,7 @@
       "title": "Error budget restante (%)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "transparent": false,
       "gridPos": {
@@ -257,7 +257,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "expr": "100 * slo:period_error_budget_remaining:ratio",
           "legendFormat": "{{sloth_service}}/{{sloth_slo}}"
@@ -315,7 +315,7 @@
       "title": "Burn rate (atual)",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "transparent": false,
       "gridPos": {
@@ -329,7 +329,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "expr": "slo:current_burn_rate:ratio",
           "legendFormat": "{{sloth_service}}/{{sloth_slo}}"

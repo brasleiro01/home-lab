@@ -25,7 +25,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(kube_pod_info, namespace)",
         "refresh": 2,
@@ -44,7 +44,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(kube_pod_info{namespace=~\"$namespace\"}, pod)",
         "refresh": 2,
@@ -222,7 +222,7 @@
       "title": "CPU por pod — request / em uso / limite",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -235,7 +235,7 @@
           "refId": "REQ",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -245,7 +245,7 @@
           "refId": "USE",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -255,7 +255,7 @@
           "refId": "LIM",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -335,7 +335,7 @@
       "title": "Memória por pod — request / em uso / limite",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -348,7 +348,7 @@
           "refId": "REQ",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -358,7 +358,7 @@
           "refId": "USE",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",
@@ -368,7 +368,7 @@
           "refId": "LIM",
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "mimir"
           },
           "instant": true,
           "format": "table",

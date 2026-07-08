@@ -24,7 +24,7 @@
         "type": "query",
         "datasource": {
           "type": "prometheus",
-          "uid": "prometheus"
+          "uid": "mimir"
         },
         "query": "label_values(traces_spanmetrics_calls_total, service)",
         "refresh": 2,
@@ -61,7 +61,7 @@
       "title": "Transações (por operação) — throughput, latência, erro%",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 12,
@@ -210,7 +210,7 @@
       "title": "Throughput por operação",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
@@ -257,7 +257,7 @@
       "title": "Latência p95 por operação",
       "datasource": {
         "type": "prometheus",
-        "uid": "prometheus"
+        "uid": "mimir"
       },
       "gridPos": {
         "h": 9,
