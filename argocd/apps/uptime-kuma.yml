@@ -9,6 +9,9 @@ spec:
     repoURL: https://github.com/brasleiro01/home-lab/
     targetRevision: HEAD
     path: argocd/uptime-kuma
+    helm:
+      valueFiles:
+        - values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: uptime-kuma
