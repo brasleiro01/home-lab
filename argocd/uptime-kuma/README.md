@@ -21,19 +21,21 @@ normalmente apaga os dados em disco. Por isso:
   como existiam no manifesto raw — continuam "vivos" no manifesto
   renderizado, o prune não mexe neles.
 
-## ServiceMonitor: mecanismo nativo do chart, não um arquivo à mão
+## ServiceMonitor: referencia o ExternalSecret sm-mt-observability
 
-Diferente do Namespace/PVC, o `ServiceMonitor` vem de
-`uptime-kuma.serviceMonitor.enabled: true` no `values.yaml` — o chart gera o
-recurso usando os mesmos helpers do `Service`, então o `selector.matchLabels`
-sempre bate automaticamente (sem risco de ficar desatualizado se o chart
-mudar labels no futuro). `interval: "30s"` é setado explicitamente pra manter
-a mesma frequência de scrape que já existia (o default do chart é `60s`).
+O `ServiceMonitor` é um manifesto raw à mão (`templates/servicemonitor.yaml`),
+não gerado pelo mecanismo nativo do chart. Isso garante que não precisamos
+colocar credenciais em texto plano no `values.yaml` — um risco inaceitável
+num repositório público. Em vez disso, o manifesto referencia um Secret
+existente gerado pelo `ExternalSecret` named `sm-mt-observability` (gerenciado
+fora do git via External Secrets Operator). O `selector.matchLabels` usa
+`app.kubernetes.io/name: uptime-kuma` / `app.kubernetes.io/instance: uptime-kuma`
+(rótulos padrão do chart Helm) e é mantido sincronizado manualmente com os
+rótulos reais do `Service` gerado.
 
-**Consequência: nome de Secret diferente.** O mecanismo nativo espera um
-Secret chamado `uptime-kuma-metrics-basic-auth` (com chaves
-`username`/`password`), não o `uptime-kuma-metrics-auth` que já existe hoje.
-Isso precisa ser criado manualmente antes do corte — ver runbook abaixo.
+**Nota importante:** os nomes exatos das chaves dentro do Secret
+(`username`/`password` ou outros) precisam ser confirmados/ajustados antes
+do corte — o manifesto usa `username`/`password` como placeholder.
 
 ## ⚠️ Runbook de corte (execução manual, uma vez, ao mergear pra main)
 
@@ -48,17 +50,15 @@ no meio.
    kubectl -n uptime-kuma exec deploy/uptime-kuma -- tar czf - -C /app/data . \
      > uptime-kuma-data-backup-$(date +%Y%m%d).tar.gz
    ```
-2. **Criar o novo Secret do ServiceMonitor**, copiando o valor do Secret
-   antigo (sem expor a API key em texto):
+2. **Confirme que o ExternalSecret `sm-mt-observability` já existe** na
+   namespace `uptime-kuma` e tem produzido seu Secret:
    ```bash
-   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.username}' | base64 -d > /tmp/u
-   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.password}' | base64 -d > /tmp/p
-   kubectl -n uptime-kuma create secret generic uptime-kuma-metrics-basic-auth \
-     --from-file=username=/tmp/u --from-file=password=/tmp/p
-   rm /tmp/u /tmp/p
+   kubectl get secret sm-mt-observability -n uptime-kuma
    ```
-   (O Secret antigo `uptime-kuma-metrics-auth` pode ficar — não atrapalha,
-   só deixa de ser referenciado. Remover é opcional.)
+   Se o Secret existir, confirme os nomes de chave dentro dele (ex.:
+   `kubectl get secret sm-mt-observability -n uptime-kuma -o jsonpath='{.data}' | jq keys`).
+   Se os nomes forem diferentes de `username`/`password`, edite
+   `templates/servicemonitor.yaml` antes do merge pra ajustar as chaves.
 3. Merge do PR `homolog` → `main`.
 4. Acompanhe o sync no Argo CD. **O Deployment vai falhar** com um erro de
    campo imutável (`spec.selector` mudou de `{app: uptime-kuma}` para
@@ -78,7 +78,7 @@ no meio.
 7. Confirme o acesso em `https://uptime.mvps.com.br` e que os monitors e o
    histórico continuam lá.
 8. Confirme que o Prometheus voltou a coletar `up{job="uptime-kuma"}` (ou a
-   métrica equivalente) — agora via o Secret novo `uptime-kuma-metrics-basic-auth`.
+   métrica equivalente) — agora via o Secret `sm-mt-observability`.
 
 ## Validar local (antes do push)
 
