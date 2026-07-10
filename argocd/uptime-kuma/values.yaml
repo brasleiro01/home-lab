@@ -24,4 +24,8 @@ uptime-kuma:
       memory: 512Mi
 
   serviceMonitor:
-    enabled: false
+    enabled: true
+    interval: 30s
+    basicAuth:
+      username: metrics
+      password: placeholder
