@@ -1,0 +1,10 @@
+apiVersion: v2
+name: uptime-kuma-homelab
+description: Umbrella chart do Uptime Kuma para o homelab (k3s + Traefik), migrado de manifests raw.
+type: application
+version: 0.1.0
+appVersion: "2.3.0"
+dependencies:
+  - name: uptime-kuma
+    version: "4.1.0"
+    repository: "https://helm.irsigler.cloud"

@@ -1,0 +1,27 @@
+uptime-kuma:
+  image:
+    tag: "2.3.0"
+
+  volume:
+    enabled: true
+    existingClaim: uptime-kuma-data
+
+  ingress:
+    enabled: true
+    className: traefik
+    hosts:
+      - host: "uptime.mvps.com.br"
+        paths:
+          - path: /
+            pathType: Prefix
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  serviceMonitor:
+    enabled: false
