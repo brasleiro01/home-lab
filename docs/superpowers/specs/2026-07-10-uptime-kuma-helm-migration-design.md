@@ -76,10 +76,21 @@ falhar com erro de campo imutável.
 O `servicemonitor.yaml` atual já funciona (referencia o Secret
 `uptime-kuma-metrics-auth`, já criado manualmente pelo usuário). Em vez de
 usar o mecanismo nativo `serviceMonitor.enabled` do chart (que espera um
-Secret com outro nome, `uptime-kuma-metrics-basic-auth`, e outro
-`selector.matchLabels`), o spec mantém o `ServiceMonitor` **exatamente como
-está hoje**, também como template raw dentro do wrapper chart — zero risco de
-quebrar o scrape do Prometheus que já está funcionando.
+Secret com outro nome, `uptime-kuma-metrics-basic-auth`), o spec mantém o
+`ServiceMonitor` como template raw dentro do wrapper chart, reaproveitando o
+Secret já existente — zero risco de precisar regenerar a API key.
+
+**Correção identificada ao ler o template real do chart (`templates/service.yaml`
+e `_helpers.tpl` do chart vendorizado):** o `Service` que o chart gera usa
+labels `app.kubernetes.io/name: uptime-kuma` / `app.kubernetes.io/instance:
+uptime-kuma` — **não** o label `app: uptime-kuma` que o `ServiceMonitor`
+atual seleciona. Copiar o `ServiceMonitor` byte-a-byte quebraria o scrape
+silenciosamente (o selector não bateria com o Service novo, sem erro
+nenhum). Por isso o `templates/servicemonitor.yaml` do wrapper chart **não é
+uma cópia idêntica**: mantém tudo igual (nome, namespace, `basicAuth`
+referenciando o mesmo Secret, porta `http`, path `/metrics`, interval `30s`),
+só troca `spec.selector.matchLabels` para `app.kubernetes.io/name:
+uptime-kuma` + `app.kubernetes.io/instance: uptime-kuma`.
 
 ## Estrutura de arquivos
 
@@ -129,7 +140,11 @@ namespace `uptime-kuma`, `ReadWriteOnce`, `storageClassName: local-path`,
 
 ### `templates/servicemonitor.yaml`
 
-Cópia exata do `argocd/uptime-kuma/servicemonitor.yaml` atual.
+Baseado no `argocd/uptime-kuma/servicemonitor.yaml` atual, com uma correção:
+`spec.selector.matchLabels` passa de `{app: uptime-kuma}` para
+`{app.kubernetes.io/name: uptime-kuma, app.kubernetes.io/instance:
+uptime-kuma}` (ver risco 4) — o resto (Secret, porta, path, interval) é
+idêntico.
 
 ### `argocd/apps/uptime-kuma.yml`
 
