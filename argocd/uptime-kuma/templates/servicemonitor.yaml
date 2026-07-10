@@ -1,0 +1,31 @@
+# Referencia o Secret gerado pelo ExternalSecret "sm-mt-observability" (fora do git,
+# via External Secrets Operator) — NÃO usa o mecanismo nativo serviceMonitor.enabled
+# do chart, porque esse mecanismo cria o Secret a partir de um valor literal em
+# values.yaml, e este repositório é público no GitHub.
+#
+# ATENÇÃO: os nomes de chave abaixo (username/password) são um placeholder — confirme
+# os nomes reais das chaves geradas pelo ExternalSecret "sm-mt-observability" antes do
+# corte, e ajuste se forem diferentes.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app: uptime-kuma
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: uptime-kuma
+      app.kubernetes.io/instance: uptime-kuma
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      basicAuth:
+        username:
+          name: sm-mt-observability
+          key: username
+        password:
+          name: sm-mt-observability
+          key: password
