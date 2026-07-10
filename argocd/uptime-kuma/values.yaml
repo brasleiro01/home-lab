@@ -2,6 +2,11 @@ uptime-kuma:
   image:
     tag: "2.3.0"
 
+  # PVC é RWO: evita 2 pods disputando o volume/SQLite durante rollout
+  # (mesma justificativa do manifesto raw antigo, ver git history).
+  strategy:
+    type: Recreate
+
   volume:
     enabled: true
     existingClaim: uptime-kuma-data

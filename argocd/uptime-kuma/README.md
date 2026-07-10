@@ -78,6 +78,17 @@ no meio.
    ```bash
    kubectl logs -f -n uptime-kuma deploy/uptime-kuma
    ```
+   **Atenção ao orçamento do liveness probe:** o default do chart é
+   `initialDelaySeconds: 180` + `periodSeconds: 10` × `failureThreshold: 3`
+   ≈ **210 segundos** até o Kubernetes considerar o container não saudável e
+   reiniciá-lo. Se a migração do banco ainda estiver visivelmente rodando nos
+   logs conforme essa janela se aproxima, aumente o `initialDelaySeconds`
+   *antes* que o probe mate o pod no meio da migração (reiniciar nesse ponto
+   é exatamente o cenário que a documentação oficial pede pra evitar):
+   ```bash
+   kubectl patch deployment uptime-kuma -n uptime-kuma --type=json -p \
+     '[{"op":"replace","path":"/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds","value":600}]'
+   ```
 7. Confirme o acesso em `https://uptime.mvps.com.br` e que os monitors e o
    histórico continuam lá.
 8. Confirme que o Prometheus voltou a coletar `up{job="uptime-kuma"}` (ou a

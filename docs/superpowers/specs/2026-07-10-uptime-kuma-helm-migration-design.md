@@ -139,16 +139,21 @@ vem do `values.yaml`.
 ```
 argocd/uptime-kuma/
   Chart.yaml
-  values.yaml                         <- inclui uptime-kuma.serviceMonitor.enabled: true
+  values.yaml                         <- inclui uptime-kuma.serviceMonitor.enabled: false
   Chart.lock                          <- gerado por helm dependency build
   charts/uptime-kuma-4.1.0.tgz        <- vendorizado
   templates/
     namespace-and-pvc.yaml            <- Namespace + PVC, idênticos aos de hoje
+    servicemonitor.yaml               <- ServiceMonitor raw à mão, referencia o
+                                          Secret do ExternalSecret sm-mt-observability
 argocd/apps/uptime-kuma.yml           <- Application existente, só ganha helm.valueFiles
 ```
 
-(Sem `templates/servicemonitor.yaml` — ver revisão na seção "Risco 4" acima:
-o ServiceMonitor agora vem do mecanismo nativo do chart via `values.yaml`.)
+(`templates/servicemonitor.yaml` existe — ver REVISÃO 2 na seção "Risco 4"
+acima: o mecanismo nativo do chart via `serviceMonitor.enabled` foi
+descartado por exigir credencial em texto plano em `values.yaml`, que é
+público. O ServiceMonitor final é um manifesto raw à mão, com
+`serviceMonitor.enabled: false` em `values.yaml`.)
 
 ### `Chart.yaml`
 
@@ -168,12 +173,19 @@ o ServiceMonitor agora vem do mecanismo nativo do chart via `values.yaml`.)
 - `resources.requests`: `cpu: 50m, memory: 128Mi`; `resources.limits`:
   `cpu: 500m, memory: 512Mi` (mesmos valores já usados em produção — a
   migração não muda dimensionamento)
-- `serviceMonitor.enabled: true`, `serviceMonitor.interval: 30s` (ver risco
-  4 — revisado durante a execução)
+- `serviceMonitor.enabled: false` (mecanismo nativo do chart descartado — ver
+  REVISÃO 2 no risco 4 acima; o scrape real vem de `templates/servicemonitor.yaml`,
+  um manifesto raw à mão referenciando o Secret do `ExternalSecret sm-mt-observability`)
 - Probes: mantém o default do chart (inclui o binário `extra/healthcheck` do
   próprio Kuma para liveness, com delay de 180s) — não replica os probes
   simplificados (`httpGet` em `/`) do manifesto raw atual, por serem menos
   corretos que o healthcheck oficial do projeto.
+- `strategy.type: Recreate` — o manifesto raw antigo já setava isso
+  explicitamente (comentário: "PVC RWO: evita 2 pods disputando o volume");
+  o chart Helm não define `strategy` por padrão (usaria `RollingUpdate`), o
+  que arriscaria dois pods montando o mesmo PVC `ReadWriteOnce` e escrevendo
+  no mesmo arquivo SQLite durante um rollout. Adicionado de volta em
+  `values.yaml` na revisão final.
 
 ### `templates/namespace-and-pvc.yaml`
 
