@@ -111,6 +111,15 @@ git commit -m "feat(uptime-kuma): migrate to helm chart wrapper, bump to 2.3.0"
 
 ### Task 2: Recursos preservados (`templates/namespace-and-pvc.yaml` + `templates/servicemonitor.yaml`)
 
+> **REVISÃO (executada, ver ledger):** esta task foi implementada como escrito
+> abaixo e passou na revisão, mas logo em seguida o usuário pediu para trocar
+> o ServiceMonitor pelo mecanismo nativo do chart. `templates/servicemonitor.yaml`
+> foi removido num commit seguinte (junto com o `servicemonitor.yaml` antigo da
+> raiz), e `values.yaml` (Task 1) ganhou `serviceMonitor.enabled: true`. Ver a
+> seção "### 4. ServiceMonitor existente" no spec de design para o racional
+> completo. O texto abaixo é o desenho original — mantido por registro
+> histórico, não reflete o estado final do ServiceMonitor.
+
 **Files:**
 - Create: `argocd/uptime-kuma/templates/namespace-and-pvc.yaml`
 - Create: `argocd/uptime-kuma/templates/servicemonitor.yaml`
@@ -308,15 +317,16 @@ git commit -m "feat(uptime-kuma): point application at helm chart wrapper"
 
 Uptime Kuma **2.3.0** via Argo CD, no mesmo modelo das outras apps deste repo
 (`argocd/rancher`, `argocd/observability/*`): **chart Helm vendorizado no
-repo** (`charts/uptime-kuma-4.1.0.tgz`) + `values.yaml`, com o `Namespace`,
-o `PersistentVolumeClaim` e o `ServiceMonitor` mantidos como templates raw
-dentro do próprio wrapper (não vêm da subchart).
+repo** (`charts/uptime-kuma-4.1.0.tgz`) + `values.yaml`. O `Namespace` e o
+`PersistentVolumeClaim` ficam como template raw dentro do próprio wrapper
+(não vêm da subchart); o `ServiceMonitor` vem do mecanismo nativo do chart
+(`uptime-kuma.serviceMonitor.enabled: true` em `values.yaml`).
 
-## Por que Namespace/PVC/ServiceMonitor ficam fora da subchart
+## Por que Namespace/PVC ficam fora da subchart
 
 Esta app já tinha dados reais (monitors configurados, histórico) num PVC
-(`uptime-kuma-data`) antes da migração para Helm. Se esses recursos fossem
-gerados pela subchart em vez de mantidos explicitamente no manifesto, o
+(`uptime-kuma-data`) antes da migração para Helm. Se esse recurso fosse
+gerado pela subchart em vez de mantido explicitamente no manifesto, o
 `syncPolicy.automated.prune: true` do Application deletaria o PVC assim que
 o manifesto raw antigo saísse do git — e um PVC `local-path` deletado
 normalmente apaga os dados em disco. Por isso:
@@ -325,10 +335,20 @@ normalmente apaga os dados em disco. Por isso:
 - `templates/namespace-and-pvc.yaml` recria o Namespace e o PVC exatamente
   como existiam no manifesto raw — continuam "vivos" no manifesto
   renderizado, o prune não mexe neles.
-- `templates/servicemonitor.yaml` preserva o ServiceMonitor existente (e o
-  Secret `uptime-kuma-metrics-auth` que ele referencia), só corrigindo o
-  `selector.matchLabels` para bater com as labels do Service novo
-  (`app.kubernetes.io/name`/`instance`, não mais `app: uptime-kuma`).
+
+## ServiceMonitor: mecanismo nativo do chart, não um arquivo à mão
+
+Diferente do Namespace/PVC, o `ServiceMonitor` vem de
+`uptime-kuma.serviceMonitor.enabled: true` no `values.yaml` — o chart gera o
+recurso usando os mesmos helpers do `Service`, então o `selector.matchLabels`
+sempre bate automaticamente (sem risco de ficar desatualizado se o chart
+mudar labels no futuro). `interval: "30s"` é setado explicitamente pra manter
+a mesma frequência de scrape que já existia (o default do chart é `60s`).
+
+**Consequência: nome de Secret diferente.** O mecanismo nativo espera um
+Secret chamado `uptime-kuma-metrics-basic-auth` (com chaves
+`username`/`password`), não o `uptime-kuma-metrics-auth` que já existe hoje.
+Isso precisa ser criado manualmente antes do corte — ver runbook abaixo.
 
 ## ⚠️ Runbook de corte (execução manual, uma vez, ao mergear pra main)
 
@@ -343,34 +363,44 @@ no meio.
    kubectl -n uptime-kuma exec deploy/uptime-kuma -- tar czf - -C /app/data . \
      > uptime-kuma-data-backup-$(date +%Y%m%d).tar.gz
    ```
-2. Merge do PR `homolog` → `main`.
-3. Acompanhe o sync no Argo CD. **O Deployment vai falhar** com um erro de
+2. **Criar o novo Secret do ServiceMonitor**, copiando o valor do Secret
+   antigo (sem expor a API key em texto):
+   ```bash
+   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.username}' | base64 -d > /tmp/u
+   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.password}' | base64 -d > /tmp/p
+   kubectl -n uptime-kuma create secret generic uptime-kuma-metrics-basic-auth \
+     --from-file=username=/tmp/u --from-file=password=/tmp/p
+   rm /tmp/u /tmp/p
+   ```
+   (O Secret antigo `uptime-kuma-metrics-auth` pode ficar — não atrapalha,
+   só deixa de ser referenciado. Remover é opcional.)
+3. Merge do PR `homolog` → `main`.
+4. Acompanhe o sync no Argo CD. **O Deployment vai falhar** com um erro de
    campo imutável (`spec.selector` mudou de `{app: uptime-kuma}` para
    `{app.kubernetes.io/name/instance: uptime-kuma}` — Kubernetes não permite
    trocar o seletor de um Deployment existente).
-4. Rode, uma vez:
+5. Rode, uma vez:
    ```bash
    kubectl delete deployment uptime-kuma -n uptime-kuma
    ```
    Isso **não afeta o PVC** — só remove o Deployment antigo pra o Argo CD
    poder criar o novo, com o seletor correto.
-5. O Argo CD recria o Deployment com a imagem `2.3.0`. Acompanhe os logs pra
+6. O Argo CD recria o Deployment com a imagem `2.3.0`. Acompanhe os logs pra
    confirmar que a migração do banco terminou sem erro:
    ```bash
    kubectl logs -f -n uptime-kuma deploy/uptime-kuma
    ```
-6. Confirme o acesso em `https://uptime.mvps.com.br` e que os monitors e o
+7. Confirme o acesso em `https://uptime.mvps.com.br` e que os monitors e o
    histórico continuam lá.
-7. Confirme que o Prometheus voltou a coletar `up{job="uptime-kuma"}` (ou a
-   métrica equivalente) — o `ServiceMonitor` foi corrigido, mas vale
-   confirmar na prática.
+8. Confirme que o Prometheus voltou a coletar `up{job="uptime-kuma"}` (ou a
+   métrica equivalente) — agora via o Secret novo `uptime-kuma-metrics-basic-auth`.
 
 ## Validar local (antes do push)
 
 ```bash
 helm dependency build argocd/uptime-kuma
 helm lint argocd/uptime-kuma
-helm template uptime-kuma argocd/uptime-kuma --namespace uptime-kuma | less
+helm template uptime-kuma argocd/uptime-kuma --namespace uptime-kuma --api-versions monitoring.coreos.com/v1 | less
 ```
 
 ## Atualizar a versão do Uptime Kuma no futuro
@@ -390,12 +420,13 @@ cd /home/marcus/homelab/home-lab
 test -f argocd/uptime-kuma/Chart.yaml && \
 test -f argocd/uptime-kuma/values.yaml && \
 test -f argocd/uptime-kuma/templates/namespace-and-pvc.yaml && \
-test -f argocd/uptime-kuma/templates/servicemonitor.yaml && \
 test -f argocd/apps/uptime-kuma.yml && \
+! test -f argocd/uptime-kuma/templates/servicemonitor.yaml && \
+! test -f argocd/uptime-kuma/servicemonitor.yaml && \
 echo OK
 ```
 
-Expected: `OK`
+Expected: `OK` (as duas últimas checagens confirmam que os arquivos de ServiceMonitor à mão foram removidos — o mecanismo agora é nativo do chart, via `values.yaml`).
 
 - [ ] **Step 3: Commit**
 
