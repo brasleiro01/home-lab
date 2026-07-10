@@ -73,38 +73,54 @@ falhar com erro de campo imutável.
 
 ### 4. ServiceMonitor existente
 
-O `servicemonitor.yaml` atual já funciona (referencia o Secret
-`uptime-kuma-metrics-auth`, já criado manualmente pelo usuário). Em vez de
-usar o mecanismo nativo `serviceMonitor.enabled` do chart (que espera um
-Secret com outro nome, `uptime-kuma-metrics-basic-auth`), o spec mantém o
-`ServiceMonitor` como template raw dentro do wrapper chart, reaproveitando o
-Secret já existente — zero risco de precisar regenerar a API key.
+**REVISÃO (2026-07-10, durante a execução):** o desenho original mantinha o
+`ServiceMonitor` como template raw preservado dentro do wrapper chart (ver
+histórico da Task 2 abaixo). Ao tentar remover o arquivo antigo duplicado da
+raiz (`argocd/uptime-kuma/servicemonitor.yaml`), o usuário pediu para trocar
+de abordagem: usar o **mecanismo nativo do chart**
+(`uptime-kuma.serviceMonitor.enabled: true`) em vez de manter um
+`ServiceMonitor` raw à mão. Esta seção documenta o desenho final,
+substituindo a versão anterior.
 
-**Correção identificada ao ler o template real do chart (`templates/service.yaml`
-e `_helpers.tpl` do chart vendorizado):** o `Service` que o chart gera usa
-labels `app.kubernetes.io/name: uptime-kuma` / `app.kubernetes.io/instance:
-uptime-kuma` — **não** o label `app: uptime-kuma` que o `ServiceMonitor`
-atual seleciona. Copiar o `ServiceMonitor` byte-a-byte quebraria o scrape
-silenciosamente (o selector não bateria com o Service novo, sem erro
-nenhum). Por isso o `templates/servicemonitor.yaml` do wrapper chart **não é
-uma cópia idêntica**: mantém tudo igual (nome, namespace, `basicAuth`
-referenciando o mesmo Secret, porta `http`, path `/metrics`, interval `30s`),
-só troca `spec.selector.matchLabels` para `app.kubernetes.io/name:
-uptime-kuma` + `app.kubernetes.io/instance: uptime-kuma`.
+O chart nativo gera o `ServiceMonitor` a partir dos mesmos helpers usados
+pelo `Service` (`uptime-kuma.selectorLabels`), então o `selector.matchLabels`
+sempre bate automaticamente com o Service real — elimina de vez a classe de
+bug do risco original (selector desatualizado). Testado localmente
+(`helm template ... --api-versions monitoring.coreos.com/v1`): renderiza
+`name: uptime-kuma`, `namespace: uptime-kuma`, `port: http`, `path:
+/metrics`, com `interval: 30s` (setado explicitamente em `values.yaml` para
+não mudar a frequência de scrape que já existe hoje — o default do chart é
+`60s`).
+
+**Consequência operacional:** o mecanismo nativo referencia um Secret com
+nome diferente do atual: `uptime-kuma-metrics-basic-auth` (gerado como
+`<fullname>-metrics-basic-auth`), em vez do `uptime-kuma-metrics-auth`
+manual que já existe e funciona hoje. **O usuário precisa criar esse novo
+Secret antes do corte**, copiando o valor do Secret antigo (sem expor a API
+key em texto — ver comando exato no runbook). Isso substitui o item
+"Trocar o mecanismo do ServiceMonitor... mantém o que já funciona" que
+antes estava em "Fora de escopo".
+
+Como consequência: `templates/servicemonitor.yaml` (criado na Task 2) e o
+`argocd/uptime-kuma/servicemonitor.yaml` antigo da raiz são **ambos
+removidos** — nenhum ServiceMonitor fica declarado como arquivo à mão, tudo
+vem do `values.yaml`.
 
 ## Estrutura de arquivos
 
 ```
 argocd/uptime-kuma/
   Chart.yaml
-  values.yaml
+  values.yaml                         <- inclui uptime-kuma.serviceMonitor.enabled: true
   Chart.lock                          <- gerado por helm dependency build
   charts/uptime-kuma-4.1.0.tgz        <- vendorizado
   templates/
     namespace-and-pvc.yaml            <- Namespace + PVC, idênticos aos de hoje
-    servicemonitor.yaml               <- ServiceMonitor, idêntico ao de hoje
 argocd/apps/uptime-kuma.yml           <- Application existente, só ganha helm.valueFiles
 ```
+
+(Sem `templates/servicemonitor.yaml` — ver revisão na seção "Risco 4" acima:
+o ServiceMonitor agora vem do mecanismo nativo do chart via `values.yaml`.)
 
 ### `Chart.yaml`
 
@@ -124,8 +140,8 @@ argocd/apps/uptime-kuma.yml           <- Application existente, só ganha helm.v
 - `resources.requests`: `cpu: 50m, memory: 128Mi`; `resources.limits`:
   `cpu: 500m, memory: 512Mi` (mesmos valores já usados em produção — a
   migração não muda dimensionamento)
-- `serviceMonitor.enabled: false` (mantém o ServiceMonitor raw existente, ver
-  risco 4)
+- `serviceMonitor.enabled: true`, `serviceMonitor.interval: 30s` (ver risco
+  4 — revisado durante a execução)
 - Probes: mantém o default do chart (inclui o binário `extra/healthcheck` do
   próprio Kuma para liveness, com delay de 180s) — não replica os probes
   simplificados (`httpGet` em `/`) do manifesto raw atual, por serem menos
@@ -137,14 +153,6 @@ Cópia exata do `Namespace` e `PersistentVolumeClaim` do
 `argocd/uptime-kuma/uptime-kuma.yaml` atual (nome `uptime-kuma-data`,
 namespace `uptime-kuma`, `ReadWriteOnce`, `storageClassName: local-path`,
 `2Gi`).
-
-### `templates/servicemonitor.yaml`
-
-Baseado no `argocd/uptime-kuma/servicemonitor.yaml` atual, com uma correção:
-`spec.selector.matchLabels` passa de `{app: uptime-kuma}` para
-`{app.kubernetes.io/name: uptime-kuma, app.kubernetes.io/instance:
-uptime-kuma}` (ver risco 4) — o resto (Secret, porta, path, interval) é
-idêntico.
 
 ### `argocd/apps/uptime-kuma.yml`
 
@@ -161,22 +169,35 @@ cluster real):
 1. **Backup:** copiar o diretório `/app/data` do pod atual do Uptime Kuma
    para fora do cluster (ex.: `kubectl cp` ou `kubectl exec ... tar`), antes
    de qualquer merge para `main`.
-2. Merge do PR `homolog` → `main`.
-3. Acompanhar o sync no ArgoCD — o Deployment vai falhar por seletor
+2. **Criar o novo Secret** que o ServiceMonitor nativo do chart espera,
+   copiando o valor do Secret antigo (sem expor a API key em texto):
+   ```bash
+   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.username}' | base64 -d > /tmp/u
+   kubectl -n uptime-kuma get secret uptime-kuma-metrics-auth -o jsonpath='{.data.password}' | base64 -d > /tmp/p
+   kubectl -n uptime-kuma create secret generic uptime-kuma-metrics-basic-auth \
+     --from-file=username=/tmp/u --from-file=password=/tmp/p
+   rm /tmp/u /tmp/p
+   ```
+   (O Secret antigo `uptime-kuma-metrics-auth` pode ficar — não atrapalha,
+   só não é mais referenciado.)
+3. Merge do PR `homolog` → `main`.
+4. Acompanhar o sync no ArgoCD — o Deployment vai falhar por seletor
    imutável (risco 2).
-4. Rodar `kubectl delete deployment uptime-kuma -n uptime-kuma`.
-5. ArgoCD recria o Deployment com a imagem `2.3.0`; acompanhar os logs do pod
+5. Rodar `kubectl delete deployment uptime-kuma -n uptime-kuma`.
+6. ArgoCD recria o Deployment com a imagem `2.3.0`; acompanhar os logs do pod
    novo para confirmar que a migração do banco terminou sem erro
    (`kubectl logs -f -n uptime-kuma deploy/uptime-kuma`).
-6. Confirmar acesso via `https://uptime.mvps.com.br` e que o scrape do
-   Prometheus continua funcionando (o ServiceMonitor não muda).
+7. Confirmar acesso via `https://uptime.mvps.com.br` e que o scrape do
+   Prometheus continua funcionando (`up{job="uptime-kuma"}` ou métrica
+   equivalente) — agora com o ServiceMonitor gerado pelo chart.
 
 ## Fora de escopo
 
-- Automatizar o backup ou o corte a partir desta sessão — sem acesso ao
-  cluster real do homelab.
-- Trocar o mecanismo do ServiceMonitor para o nativo do chart — mantém o que
-  já funciona.
+- Automatizar o backup, a criação do novo Secret, ou o corte a partir desta
+  sessão — sem acesso ao cluster real do homelab, tudo fica documentado como
+  runbook manual.
+- Deletar o Secret antigo `uptime-kuma-metrics-auth` — fica órfão mas
+  inofensivo, remoção é opcional e fica a critério do usuário.
 - Qualquer alteração em `homelab/projeto/` (o esqueleto GitOps criado
   anteriormente nesta mesma conversa, para fins de aprendizado — não é
   afetado por este trabalho no repositório real).
