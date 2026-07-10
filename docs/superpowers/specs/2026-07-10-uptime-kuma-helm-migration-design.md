@@ -101,6 +101,34 @@ key em texto — ver comando exato no runbook). Isso substitui o item
 "Trocar o mecanismo do ServiceMonitor... mantém o que já funciona" que
 antes estava em "Fora de escopo".
 
+**REVISÃO 2 (2026-07-10, achado na revisão da Task 4 — reverte a Revisão 1):**
+a revisão da Task 4 (README) descobriu, extraindo e lendo o chart vendorizado
+por completo, um arquivo que não tinha sido inspecionado durante o desenho
+original: `templates/servicemonitor.auth.secret.yaml`. Esse template **cria
+um Secret de verdade** a partir do valor literal de
+`.Values.serviceMonitor.basicAuth` (`stringData` direto dos valores do
+`values.yaml`) — **não** é uma referência a um Secret externo já existente,
+como eu tinha assumido ao ler só o `servicemonitor.yaml`. Isso significa que
+o mecanismo nativo do chart exige colocar a credencial real da API key **em
+texto plano no `values.yaml`, commitado no git** — e este repositório
+(`brasleiro01/home-lab`) é **público** no GitHub. Colocar a API key real ali
+vazaria a credencial publicamente.
+
+Além disso, o nome do Secret que o `ServiceMonitor` nativo referencia é fixo
+(`{{ fullname }}-metrics-basic-auth`, sem ponto de override em `values.yaml`)
+— não dá pra apontar o mecanismo nativo para um Secret com outro nome.
+
+**Decisão final:** voltar para um `ServiceMonitor` raw (à mão, dentro de
+`templates/`, mesma abordagem da Revisão 0 original), mas referenciando um
+`ExternalSecret` que o usuário já mantém no cluster
+(`sm-mt-observability`, gerenciado fora do git via um External Secrets
+Operator) em vez do antigo `uptime-kuma-metrics-auth`. O `values.yaml` volta
+a ter `serviceMonitor.enabled: false`. Os nomes exatos das chaves
+(`username`/`password` ou outros) dentro do Secret gerado por esse
+`ExternalSecret` **não foram confirmados pelo usuário** — o
+`templates/servicemonitor.yaml` final usa `username`/`password` como
+placeholder, com um comentário pedindo confirmação/ajuste antes do corte.
+
 Como consequência: `templates/servicemonitor.yaml` (criado na Task 2) e o
 `argocd/uptime-kuma/servicemonitor.yaml` antigo da raiz são **ambos
 removidos** — nenhum ServiceMonitor fica declarado como arquivo à mão, tudo
