@@ -2,10 +2,13 @@
 
 Uptime Kuma **2.3.0** via Argo CD, no mesmo modelo das outras apps deste repo
 (`argocd/rancher`, `argocd/observability/*`): **chart Helm vendorizado no
-repo** (`charts/uptime-kuma-4.1.0.tgz`) + `values.yaml`. O `Namespace` e o
-`PersistentVolumeClaim` ficam como template raw dentro do próprio wrapper
-(não vêm da subchart); o `ServiceMonitor` vem do mecanismo nativo do chart
-(`uptime-kuma.serviceMonitor.enabled: true` em `values.yaml`).
+repo** (`charts/uptime-kuma-4.1.0.tgz`) + `values.yaml`. O `Namespace`, o
+`PersistentVolumeClaim` e o `ServiceMonitor` ficam como templates raw dentro
+do próprio wrapper (não vêm da subchart) — o `ServiceMonitor` referencia o
+Secret gerado pelo `ExternalSecret sm-mt-observability` (fora do git), não o
+mecanismo nativo `serviceMonitor.enabled` do chart, que fica desligado
+(`false`) porque criaria um Secret a partir de valor literal em
+`values.yaml`, e este repositório é público.
 
 ## Por que Namespace/PVC ficam fora da subchart
 
